@@ -1,43 +1,58 @@
 '''
-Streamlit page for Text-to-SQL functionality.
+Streamlit page for Text-to-SQL functionality using simplified SQL chat.
 '''
 import streamlit as st
-from utils import ai_util, db_util
-from sqlalchemy import text
+from utils.mock_sql_chat import MockSQLChat
 
 st.set_page_config(page_title="Text-to-SQL", page_icon="🤖")
 
-st.title("Text-to-SQL Querying")
+st.title("Text-to-SQL Querying with AI Agent")
 
-# Get table schema
-with db_util.get_engine().connect() as connection:
-    result = connection.execute(text("PRAGMA table_info(properties)"))
-    schema = result.fetchall()
+st.write("Ask questions about the MLI property database in natural language. The AI agent will generate and execute SQL queries for you.")
 
-schema_str = "\n".join([f"{row[1]} {row[2]}" for row in schema])
+# Initialize the SQL chat assistant
+@st.cache_resource
+def get_sql_assistant():
+    return MockSQLChat()
 
-with st.expander("View Table Schema"):
-    st.code(schema_str, language="sql")
-
-user_question = st.text_input("Ask a question about the properties:", "Find the 10 largest properties by size")
-
-if st.button("Get Answer"):
-    if user_question:
-        with st.spinner("Generating SQL query and fetching results..."):
-            try:
-                # Generate SQL from prompt
-                sql_query = ai_util.get_sql_from_prompt(user_question, schema_str)
-                st.write("### Generated SQL Query")
-                st.code(sql_query, language="sql")
-
-                # Query the database
-                results_df = db_util.query_db(sql_query)
-
-                st.write("### Results")
-                st.dataframe(results_df)
-
-            except Exception as e:
-                st.error(f"An error occurred: {e}")
-    else:
-        st.warning("Please enter a question.")
+try:
+    sql_assistant = get_sql_assistant()
+    
+    # Show database schema
+    with st.expander("View Database Schema"):
+        schema = sql_assistant.get_database_schema()
+        st.code(schema, language="sql")
+    
+    # Show sample queries
+    with st.expander("Sample Questions You Can Ask"):
+        sample_queries = sql_assistant.get_sample_queries()
+        for query in sample_queries:
+            st.write(f"**{query['category']}**: {query['question']}")
+    
+    # User input
+    user_question = st.text_input(
+        "Ask a question about the properties:", 
+        "Find the 10 most similar properties in the estate to the newly marketed property"
+    )
+    
+    if st.button("Get Answer"):
+        if user_question:
+            with st.spinner("Processing your question with AI agent..."):
+                try:
+                    result = sql_assistant.chat_with_database(user_question)
+                    
+                    if result["success"]:
+                        st.write("### AI Agent Response")
+                        st.write(result["answer"])
+                    else:
+                        st.error(f"An error occurred: {result['error']}")
+                        
+                except Exception as e:
+                    st.error(f"An error occurred: {e}")
+        else:
+            st.warning("Please enter a question.")
+            
+except Exception as e:
+    st.error(f"Failed to initialize SQL assistant: {e}")
+    st.write("Please ensure the database has been created by running the Preprocess step first.")
 

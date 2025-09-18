@@ -11,13 +11,11 @@ load_dotenv()
 
 def get_llm():
     """Initializes and returns the ChatOpenAI model."""
-    api_key = os.getenv('OPENAI_API_KEY')
-    return ChatOpenAI(model="gpt-4o-mini", temperature=0, openai_api_key=api_key)
+    return ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
 def get_embeddings_model():
     """Initializes and returns the OpenAI embeddings model."""
-    api_key = os.getenv('OPENAI_API_KEY')
-    return OpenAIEmbeddings(openai_api_key=api_key)
+    return OpenAIEmbeddings()
 
 def get_sql_from_prompt(prompt: str, schema: str) -> str:
     """
