@@ -212,3 +212,9 @@ __marimo__/
 test-data/*.json
 db/*.db
 db/*.sqlite
+
+# Exclude images from test-data directory
+test-data/*.png
+test-data/*.webp
+test-data/*.jpg
+test-data/*.jpeg
