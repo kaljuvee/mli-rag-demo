@@ -3,6 +3,7 @@ Streamlit page for Text-to-SQL functionality.
 '''
 import streamlit as st
 from utils import ai_util, db_util
+from sqlalchemy import text
 
 st.set_page_config(page_title="Text-to-SQL", page_icon="🤖")
 
@@ -10,7 +11,7 @@ st.title("Text-to-SQL Querying")
 
 # Get table schema
 with db_util.get_engine().connect() as connection:
-    result = connection.execute(db_util.text("PRAGMA table_info(properties)"))
+    result = connection.execute(text("PRAGMA table_info(properties)"))
     schema = result.fetchall()
 
 schema_str = "\n".join([f"{row[1]} {row[2]}" for row in schema])

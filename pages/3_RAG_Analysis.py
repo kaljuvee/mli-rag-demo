@@ -30,7 +30,7 @@ if st.button("Find Similar Properties"):
                 property_details = marketed_properties[marketed_properties["industrial_estate_name"] == selected_property].iloc[0]
                 
                 # Create a query text from the property details
-                query_text = f"{property_details["industrial_estate_name"]} {property_details["unit_name"]} in {property_details["region"]}"
+                query_text = f"{property_details['industrial_estate_name']} {property_details['unit_name']} in {property_details['region']}"
 
                 # Find similar properties
                 similar_docs = rag_util.find_similar_properties(vector_store, query_text, k=11) # k=11 to exclude the property itself
