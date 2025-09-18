@@ -209,7 +209,6 @@ __marimo__/
 # MLI Demo specific
 *.faiss
 *.index
-test-data/*.json
 db/*.db
 db/*.sqlite
 

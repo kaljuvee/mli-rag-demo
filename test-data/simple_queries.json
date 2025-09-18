@@ -1,0 +1,95 @@
+[
+  {
+    "query": "Show me all marketed properties",
+    "success": true,
+    "sql_query": "SELECT * FROM properties WHERE is_marketed = 1",
+    "error": null,
+    "data_shape": [
+      5,
+      15
+    ],
+    "sample_data": [
+      {
+        "property_id": null,
+        "industrial_estate_name": "Cherry Lane",
+        "unit_name": "Unit 10",
+        "region": "North West",
+        "latitude": 52.46718638257576,
+        "longitude": -3.7840028971023973,
+        "car_parking_spaces": 30,
+        "size_sqm": 16860.130015843635,
+        "build_year": 1977,
+        "yard_depth_m": 0.0,
+        "min_eaves_m": 0.0,
+        "max_eaves_m": 0.0,
+        "doors": 0,
+        "epc_rating": "Not Available",
+        "is_marketed": 1
+      },
+      {
+        "property_id": null,
+        "industrial_estate_name": "Tech Hub",
+        "unit_name": "Unit 8",
+        "region": "South East",
+        "latitude": 0.0,
+        "longitude": 0.0,
+        "car_parking_spaces": 23,
+        "size_sqm": 905.5239479867516,
+        "build_year": 1976,
+        "yard_depth_m": 0.0,
+        "min_eaves_m": 0.0,
+        "max_eaves_m": 0.0,
+        "doors": 0,
+        "epc_rating": "Not Available",
+        "is_marketed": 1
+      },
+      {
+        "property_id": null,
+        "industrial_estate_name": "Spitfire Park",
+        "unit_name": "Unit 42",
+        "region": "Midlands",
+        "latitude": 53.505830910791325,
+        "longitude": -1.905054480453693,
+        "car_parking_spaces": 49,
+        "size_sqm": 2294.4981097472573,
+        "build_year": 1976,
+        "yard_depth_m": 0.0,
+        "min_eaves_m": 0.0,
+        "max_eaves_m": 0.0,
+        "doors": 0,
+        "epc_rating": "B",
+        "is_marketed": 1
+      }
+    ]
+  },
+  {
+    "query": "Count total properties",
+    "success": true,
+    "sql_query": "SELECT COUNT(*) as total_properties FROM properties",
+    "error": null,
+    "data_shape": [
+      1,
+      1
+    ],
+    "sample_data": [
+      {
+        "total_properties": 1255
+      }
+    ]
+  },
+  {
+    "query": "What is the average size of properties?",
+    "success": true,
+    "sql_query": "SELECT AVG(size_sqm) as avg_size_sqm FROM properties WHERE size_sqm IS NOT NULL",
+    "error": null,
+    "data_shape": [
+      1,
+      1
+    ],
+    "sample_data": [
+      {
+        "avg_size_sqm": 24405.091762904332
+      }
+    ]
+  }
+]

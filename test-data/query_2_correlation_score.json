@@ -1,0 +1,32 @@
+{
+  "query": "Provide a correlation score for the homogeneity of the marketed property(ies) with the rest of the estate, scoring each by physical characteristics, location, and age separately",
+  "success": true,
+  "sql_query": "SELECT \n                    'Physical Characteristics' as category,\n                    CORR(size_sqm, min_eaves_m) as correlation_score,\n                    COUNT(*) as sample_size\n                FROM properties\n                WHERE size_sqm IS NOT NULL AND min_eaves_m IS NOT NULL\n                UNION ALL\n                SELECT \n                    'Location Analysis' as category,\n                    CORR(latitude, longitude) as correlation_score,\n                    COUNT(*) as sample_size\n                FROM properties\n                WHERE latitude IS NOT NULL AND longitude IS NOT NULL\n                UNION ALL\n                SELECT \n                    'Age Analysis' as category,\n                    CORR(build_year, size_sqm) as correlation_score,\n                    COUNT(*) as sample_size\n                FROM properties\n                WHERE build_year IS NOT NULL AND size_sqm IS NOT NULL",
+  "error": null,
+  "data_shape": [
+    3,
+    3
+  ],
+  "sample_data": [
+    {
+      "category": "Physical Characteristics",
+      "correlation_score": 0.65,
+      "sample_size": 1250
+    },
+    {
+      "category": "Location Analysis",
+      "correlation_score": 0.23,
+      "sample_size": 1250
+    },
+    {
+      "category": "Age Analysis",
+      "correlation_score": 0.45,
+      "sample_size": 1200
+    }
+  ],
+  "column_names": [
+    "category",
+    "correlation_score",
+    "sample_size"
+  ]
+}

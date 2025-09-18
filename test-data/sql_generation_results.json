@@ -1,0 +1,20 @@
+[
+  {
+    "query_number": 1,
+    "natural_language": "Find the 10 most similar properties in the estate to the newly marketed property",
+    "generated_sql": "SELECT p1.*, \n                       ABS(p1.size_sqm - m.avg_marketed_size) as size_diff,\n                       ABS(p1.build_year - m.avg_marketed_year) as year_diff\n                FROM properties p1,\n                     (SELECT AVG(size_sqm) as avg_marketed_size, \n                             AVG(build_year) as avg_marketed_year\n                      FROM properties WHERE is_marketed = 1) m\n                WHERE p1.is_marketed = 0\n                ORDER BY (ABS(p1.size_sqm - m.avg_marketed_size) + \n                         ABS(p1.build_year - m.avg_marketed_year)) ASC\n                LIMIT 10",
+    "has_error": false
+  },
+  {
+    "query_number": 2,
+    "natural_language": "Provide a correlation score for the homogeneity of the marketed property(ies) with the rest of the estate, scoring each by physical characteristics, location, and age separately",
+    "generated_sql": "SELECT \n                    'Physical Characteristics' as category,\n                    CORR(size_sqm, min_eaves_m) as correlation_score,\n                    COUNT(*) as sample_size\n                FROM properties\n                WHERE size_sqm IS NOT NULL AND min_eaves_m IS NOT NULL\n                UNION ALL\n                SELECT \n                    'Location Analysis' as category,\n                    CORR(latitude, longitude) as correlation_score,\n                    COUNT(*) as sample_size\n                FROM properties\n                WHERE latitude IS NOT NULL AND longitude IS NOT NULL\n                UNION ALL\n                SELECT \n                    'Age Analysis' as category,\n                    CORR(build_year, size_sqm) as correlation_score,\n                    COUNT(*) as sample_size\n                FROM properties\n                WHERE build_year IS NOT NULL AND size_sqm IS NOT NULL",
+    "has_error": false
+  },
+  {
+    "query_number": 3,
+    "natural_language": "Find the closest properties to the marketed property, after excluding any property in the portfolio that is more than 10 miles from a major city",
+    "generated_sql": "SELECT p1.*,\n                       MIN(\n                           6371 * acos(\n                               cos(radians(m.latitude)) * \n                               cos(radians(p1.latitude)) * \n                               cos(radians(p1.longitude) - radians(m.longitude)) + \n                               sin(radians(m.latitude)) * \n                               sin(radians(p1.latitude))\n                           )\n                       ) as distance_km\n                FROM properties p1\n                CROSS JOIN (SELECT latitude, longitude FROM properties WHERE is_marketed = 1) m\n                WHERE p1.is_marketed = 0\n                  AND p1.latitude IS NOT NULL \n                  AND p1.longitude IS NOT NULL\n                GROUP BY p1.property_id\n                ORDER BY distance_km ASC\n                LIMIT 10",
+    "has_error": false
+  }
+]
