@@ -3,7 +3,7 @@ Streamlit page for Text-to-SQL functionality using simplified SQL chat.
 '''
 import streamlit as st
 from utils.mock_sql_chat import MockSQLChat
-from utils.streamlit_db_util import check_db_initialized
+from utils.db_util import db
 
 st.set_page_config(page_title="Text-to-SQL", page_icon="🤖")
 
@@ -12,14 +12,14 @@ st.title("Text-to-SQL Querying with AI Agent")
 st.write("Ask questions about the MLI property database in natural language. The AI agent will generate and execute SQL queries for you.")
 
 # Check if database is initialized
-if not check_db_initialized():
+if not db.check_initialized():
     st.warning("⚠️ Database not initialized. Please go to the Preprocess page and run the preprocessing step first.")
     st.stop()
 
 # Initialize the SQL chat assistant
 @st.cache_resource
 def get_sql_assistant():
-    return MockSQLChat()
+    return MockSQLChat(db_path=db.db_path)
 
 try:
     sql_assistant = get_sql_assistant()

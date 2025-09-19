@@ -6,14 +6,15 @@ import sqlite3
 from typing import Dict, Any, List
 import pandas as pd
 
-from .streamlit_db_util import DB_FILE
+from .db_util import db as default_db
 
 class MockSQLChat:
     def __init__(self, db_path=None):
-        # Use the Streamlit-specific database path if none provided
         if db_path is None:
-            db_path = DB_FILE
-        self.db_path = db_path
+            # Use the default database path from db_util
+            self.db_path = default_db.db_path
+        else:
+            self.db_path = db_path
 
     def get_database_schema(self) -> str:
         """Get a description of the database schema"""

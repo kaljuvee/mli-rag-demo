@@ -10,7 +10,7 @@ from typing import Tuple, Dict, Any, Optional
 import numpy as np
 from pathlib import Path
 
-from . import db_util
+from .db_util import db as default_db
 
 
 class PropertyPreprocessor:
@@ -19,15 +19,7 @@ class PropertyPreprocessor:
     def __init__(self, db_path: str = None):
         """Initialize preprocessor with database path."""
         # Use the path from db_util if none provided
-        self.db_path = db_path if db_path else db_util.DB_FILE
-        self.ensure_db_directory()
-    
-    def ensure_db_directory(self):
-        """Ensure database directory exists."""
-        db_dir = os.path.dirname(self.db_path)
-        if db_dir and not os.path.exists(db_dir):
-            os.makedirs(db_dir, exist_ok=True)
-            print(f"Created database directory: {db_dir}")
+        self.db_path = db_path if db_path else default_db.db_path
     
     def load_excel_files(self, 
                         current_portfolio_path: str,
@@ -177,9 +169,6 @@ class PropertyPreprocessor:
     def create_database_schema(self) -> bool:
         """Create database schema for properties."""
         try:
-            # Ensure database directory exists
-            self.ensure_db_directory()
-            
             # Create database connection
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -235,11 +224,6 @@ class PropertyPreprocessor:
     def load_data_to_database(self, df: pd.DataFrame) -> bool:
         """Load cleaned data into database."""
         try:
-            # Ensure database exists
-            if not os.path.exists(self.db_path):
-                if not self.create_database_schema():
-                    return False
-            
             # Rename columns to match database schema
             column_mapping = {
                 'min._eaves_m': 'min_eaves_m',
@@ -290,69 +274,6 @@ class PropertyPreprocessor:
             print(f"❌ Error loading data to database: {e}")
             return False
     
-    def run_full_preprocessing(self, 
-                              current_portfolio_path: str = "data/CurrentPortfolio.xlsx",
-                              marketed_warehouses_path: str = "data/MarketedWarehouses.xlsx") -> Dict[str, Any]:
-        """
-        Run complete preprocessing pipeline.
-        
-        Args:
-            current_portfolio_path: Path to current portfolio Excel file
-            marketed_warehouses_path: Path to marketed warehouses Excel file
-            
-        Returns:
-            Dictionary with preprocessing results and statistics
-        """
-        try:
-            print("🚀 Starting MLI property data preprocessing...")
-            
-            # Step 1: Load Excel files
-            current_df, marketed_df = self.load_excel_files(
-                current_portfolio_path, marketed_warehouses_path
-            )
-            
-            # Step 2: Clean and standardize data
-            combined_df = self.clean_and_standardize_data(current_df, marketed_df)
-            
-            # Step 3: Create database schema
-            if not self.create_database_schema():
-                raise Exception("Failed to create database schema")
-            
-            # Step 4: Load data to database
-            if not self.load_data_to_database(combined_df):
-                raise Exception("Failed to load data to database")
-            
-            # Step 5: Generate summary statistics
-            stats = self._generate_summary_stats(combined_df)
-            
-            print("✅ Preprocessing completed successfully!")
-            
-            return {
-                "success": True,
-                "total_properties": len(combined_df),
-                "current_properties": len(current_df),
-                "marketed_properties": len(marketed_df),
-                "database_path": self.db_path,
-                "statistics": stats,
-                "sample_data": combined_df.head(3).to_dict('records'),
-                "error": None
-            }
-            
-        except Exception as e:
-            error_msg = f"Preprocessing failed: {str(e)}"
-            print(f"❌ {error_msg}")
-            
-            return {
-                "success": False,
-                "total_properties": 0,
-                "current_properties": 0,
-                "marketed_properties": 0,
-                "database_path": self.db_path,
-                "statistics": {},
-                "sample_data": [],
-                "error": error_msg
-            }
-    
     def _generate_summary_stats(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Generate summary statistics for the dataset."""
         try:
@@ -383,16 +304,62 @@ def run_preprocessing(current_portfolio_path: str = "data/CurrentPortfolio.xlsx"
     Args:
         current_portfolio_path: Path to current portfolio Excel file
         marketed_warehouses_path: Path to marketed warehouses Excel file
-        db_path: Path to SQLite database file (uses db_util.DB_FILE if None)
+        db_path: Path to SQLite database file (uses default_db.db_path if None)
         
     Returns:
         Dictionary with preprocessing results
     """
     preprocessor = PropertyPreprocessor(db_path=db_path)
-    return preprocessor.run_full_preprocessing(
-        current_portfolio_path=current_portfolio_path,
-        marketed_warehouses_path=marketed_warehouses_path
-    )
+    
+    try:
+        print("🚀 Starting MLI property data preprocessing...")
+        
+        # Step 1: Load Excel files
+        current_df, marketed_df = preprocessor.load_excel_files(
+            current_portfolio_path, marketed_warehouses_path
+        )
+        
+        # Step 2: Clean and standardize data
+        combined_df = preprocessor.clean_and_standardize_data(current_df, marketed_df)
+        
+        # Step 3: Create database schema
+        if not preprocessor.create_database_schema():
+            raise Exception("Failed to create database schema")
+        
+        # Step 4: Load data to database
+        if not preprocessor.load_data_to_database(combined_df):
+            raise Exception("Failed to load data to database")
+        
+        # Step 5: Generate summary statistics
+        stats = preprocessor._generate_summary_stats(combined_df)
+        
+        print("✅ Preprocessing completed successfully!")
+        
+        return {
+            "success": True,
+            "total_properties": len(combined_df),
+            "current_properties": len(current_df),
+            "marketed_properties": len(marketed_df),
+            "database_path": preprocessor.db_path,
+            "statistics": stats,
+            "sample_data": combined_df.head(3).to_dict('records'),
+            "error": None
+        }
+        
+    except Exception as e:
+        error_msg = f"Preprocessing failed: {str(e)}"
+        print(f"❌ {error_msg}")
+        
+        return {
+            "success": False,
+            "total_properties": 0,
+            "current_properties": 0,
+            "marketed_properties": 0,
+            "database_path": preprocessor.db_path,
+            "statistics": {},
+            "sample_data": [],
+            "error": error_msg
+        }
 
 
 if __name__ == "__main__":

@@ -10,8 +10,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.preprocess_util import PropertyPreprocessor
-from utils.streamlit_db_util import DB_FILE, check_db_initialized
-from utils.streamlit_data_loader import get_current_portfolio, get_marketed_warehouses
+from utils.db_util import db
 
 st.set_page_config(page_title="Preprocess Data", page_icon="⚙️")
 
@@ -32,9 +31,18 @@ This page loads the Excel files, cleans the data, and stores it in a local SQLit
 5. Load data with proper indexing for performance
 """)
 
+# Function to get the absolute path to data files
+def get_data_path(filename):
+    # Get the directory of the current file
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    # Go up one level to the project root
+    project_root = os.path.dirname(current_dir)
+    # Return the path to the data file
+    return os.path.join(project_root, "data", filename)
+
 # Initialize session state for preprocessing status
 if 'preprocess_done' not in st.session_state:
-    st.session_state.preprocess_done = check_db_initialized()
+    st.session_state.preprocess_done = db.check_initialized()
 
 # Check if data is already loaded
 if st.session_state.preprocess_done:
@@ -47,23 +55,30 @@ if st.session_state.preprocess_done:
 if st.button("Run Preprocessing", type="primary") or st.session_state.get('preprocess_done') == False:
     try:
         with st.spinner("Loading and processing data..."):
-            # Load data directly using the streamlit_data_loader
-            current_df = get_current_portfolio()
-            marketed_df = get_marketed_warehouses()
+            # Get paths to data files
+            current_portfolio_path = get_data_path("CurrentPortfolio.xlsx")
+            marketed_warehouses_path = get_data_path("MarketedWarehouses.xlsx")
             
-            st.info(f"Loaded {len(current_df)} current properties and {len(marketed_df)} marketed properties")
+            # Load Excel files
+            try:
+                current_df = pd.read_excel(current_portfolio_path)
+                marketed_df = pd.read_excel(marketed_warehouses_path)
+                st.info(f"Loaded {len(current_df)} current properties and {len(marketed_df)} marketed properties")
+            except Exception as e:
+                st.error(f"Error loading Excel files: {e}")
+                st.stop()
             
-            # Initialize preprocessor with the Streamlit-specific database path
-            preprocessor = PropertyPreprocessor(db_path=DB_FILE)
+            # Initialize preprocessor with the database path
+            preprocessor = PropertyPreprocessor(db_path=db.db_path)
             
             # Clean and standardize the data
             combined_df = preprocessor.clean_and_standardize_data(current_df, marketed_df)
             
             # Create database schema
-            preprocessor.create_database_schema()
+            db.create_tables()
             
             # Load data to database
-            success = preprocessor.load_data_to_database(combined_df)
+            success = db.load_dataframe(combined_df)
             
             if success:
                 st.success("✅ Data successfully preprocessed and loaded into the database!")
@@ -115,7 +130,7 @@ if st.button("Run Preprocessing", type="primary") or st.session_state.get('prepr
                 
                 # Database information
                 st.subheader("🗄️ Database Information")
-                st.info(f"**Database Location:** `{preprocessor.db_path}`")
+                st.info(f"**Database Location:** `{db.db_path}`")
                 st.write("The database includes optimized indexes for:")
                 st.write("- Marketing status (is_marketed)")
                 st.write("- Geographic coordinates (latitude, longitude)")
