@@ -11,6 +11,7 @@ import numpy as np
 from pathlib import Path
 
 from .db_util import db as default_db
+from .vector_db_util import vector_db
 
 
 class PropertyPreprocessor:
@@ -267,6 +268,10 @@ class PropertyPreprocessor:
             print(f"   - Total properties: {count}")
             print(f"   - Marketed properties: {marketed_count}")
             print(f"   - Database file: {self.db_path}")
+            
+            # Initialize vector database
+            print("🔄 Initializing vector database...")
+            vector_db.initialize_vectors(force_rebuild=True)
             
             return True
             
