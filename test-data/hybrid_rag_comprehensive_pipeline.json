@@ -1,0 +1,108 @@
+{
+  "test": "comprehensive_hybrid_rag_pipeline",
+  "success": true,
+  "analysis_timestamp": "2025-09-19",
+  "embedding_model": "TfidfVectorizer",
+  "portfolio_overview": {
+    "total_properties": 1255,
+    "vector_dimensions": 384,
+    "marketed_properties": 5,
+    "faiss_index_size": 1255
+  },
+  "similarity_analysis": {
+    "success": true,
+    "query_text": "Modern industrial facility with loading docks",
+    "top_similar_properties": 5,
+    "avg_similarity_score": 0.11535944044589996,
+    "max_similarity_score": 0.11570562422275543,
+    "top_matches": [
+      {
+        "property_id": 120.0,
+        "industrial_estate_name": "Sapphire Wharf 9",
+        "unit_name": "Unit 6",
+        "region": "London",
+        "latitude": 51.0209295466846,
+        "longitude": -0.0043997419024149565,
+        "car_parking_spaces": null,
+        "size_sqm": 3516.356402825713,
+        "build_year": 1997.0,
+        "yard_depth_m": 0.0,
+        "min_eaves_m": 0.0,
+        "max_eaves_m": 0.0,
+        "doors": null,
+        "epc_rating": "A",
+        "is_marketed": 0,
+        "similarity_score": 0.11570562422275543,
+        "rank": 1
+      },
+      {
+        "property_id": 123.0,
+        "industrial_estate_name": "Sapphire Wharf 9",
+        "unit_name": "Unit 9",
+        "region": "London",
+        "latitude": 51.020983509163194,
+        "longitude": -0.004517552897612768,
+        "car_parking_spaces": null,
+        "size_sqm": 6225.071047340469,
+        "build_year": 1998.0,
+        "yard_depth_m": 0.0,
+        "min_eaves_m": 0.0,
+        "max_eaves_m": 0.0,
+        "doors": null,
+        "epc_rating": "A",
+        "is_marketed": 0,
+        "similarity_score": 0.11544634401798248,
+        "rank": 2
+      },
+      {
+        "property_id": 122.0,
+        "industrial_estate_name": "Sapphire Wharf 9",
+        "unit_name": "Unit 8",
+        "region": "London",
+        "latitude": 51.02117786524858,
+        "longitude": -0.00408875719793041,
+        "car_parking_spaces": null,
+        "size_sqm": 5740.993629588993,
+        "build_year": 2016.0,
+        "yard_depth_m": 0.0,
+        "min_eaves_m": 0.0,
+        "max_eaves_m": 0.0,
+        "doors": null,
+        "epc_rating": "A",
+        "is_marketed": 0,
+        "similarity_score": 0.11544634401798248,
+        "rank": 3
+      }
+    ]
+  },
+  "cluster_analysis": {
+    "success": true,
+    "n_clusters": 4,
+    "largest_cluster_size": 437,
+    "cluster_distribution": {
+      "cluster_0": 437,
+      "cluster_1": 402,
+      "cluster_2": 214,
+      "cluster_3": 202
+    }
+  },
+  "homogeneity_analysis": {
+    "success": true,
+    "overall_homogeneity": 0.17789008965270903,
+    "marketed_vs_portfolio": 0.12667527742604387,
+    "homogeneity_coefficient": 1.7911418486853208
+  },
+  "insights": {
+    "portfolio_diversity_score": 0.822109910347291,
+    "embedding_quality": "local_model",
+    "data_source": "real_database",
+    "vector_approach": "hybrid_local_embeddings"
+  },
+  "performance_metrics": {
+    "vector_initialization_success": true,
+    "faiss_search_enabled": true,
+    "local_embeddings_used": true,
+    "total_embedding_dimensions": 384
+  },
+  "error": null
+}

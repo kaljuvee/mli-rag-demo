@@ -1,0 +1,21 @@
+{
+  "test": "hybrid_vector_initialization",
+  "success": true,
+  "properties_loaded": 1255,
+  "marketed_properties": 5,
+  "vector_dimensions": 384,
+  "vector_shape": [
+    1255,
+    384
+  ],
+  "faiss_index_size": 1255,
+  "embedding_model": "TfidfVectorizer",
+  "sample_vector_stats": {
+    "mean": 0.008158517810461263,
+    "std": 0.05037464891989872,
+    "min": 0.0,
+    "max": 0.5100711158332305,
+    "norm": 1.0
+  },
+  "error": null
+}

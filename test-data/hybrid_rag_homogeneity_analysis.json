@@ -1,0 +1,22 @@
+{
+  "success": true,
+  "query_type": "homogeneity_analysis",
+  "total_properties": 1255,
+  "marketed_properties": 5,
+  "portfolio_properties": 1250,
+  "embedding_model": "TfidfVectorizer",
+  "overall_homogeneity": 0.17789008965270903,
+  "homogeneity_std": 0.09931657387819953,
+  "marketed_vs_portfolio": 0.12667527742604387,
+  "marketed_internal_homogeneity": 0.36553090685938927,
+  "portfolio_internal_homogeneity": 0.17829680589744706,
+  "homogeneity_coefficient": 1.7911418486853208,
+  "similarity_distribution": {
+    "min": 0.05463782274451212,
+    "max": 1.0000000000000004,
+    "median": 0.14290411394031158,
+    "percentile_25": 0.11516536501824075,
+    "percentile_75": 0.20430172174890907
+  },
+  "error": null
+}
