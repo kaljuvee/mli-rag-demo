@@ -12,7 +12,7 @@ A comprehensive **Retrieval-Augmented Generation (RAG)** demonstration applicati
 The MLI RAG Demo implements a sophisticated multi-layered architecture combining:
 
 - **🤖 AI-Powered Text-to-SQL**: Natural language queries converted to SQL using GPT-4o-mini
-- **🔍 Vector-Based RAG Analysis**: Property similarity search using OpenAI embeddings and FAISS
+- **🔍 Vector-Based RAG Analysis**: Property similarity search using TF-IDF embeddings and FAISS
 - **📊 Interactive Web Interface**: Multi-page Streamlit application with real-time processing
 - **🗄️ Robust Data Pipeline**: Automated Excel processing with SQLite storage
 - **🧪 Comprehensive Testing**: Unit tests with JSON result validation
@@ -29,8 +29,14 @@ mli-rag-demo/
 │   ├── CurrentPortfolio.xlsx        # 1,250 current properties
 │   └── MarketedWarehouses.xlsx      # 5 marketed properties
 │
-├── 📁 db/                           # Database Storage
+├── 📁 db/                           # SQL Database Storage
 │   └── mli.db                       # SQLite database (auto-generated)
+│
+├── 📁 embeddings/                   # Vector Database Storage
+│   ├── property_vectors.npy         # Property embeddings array
+│   ├── faiss_index.bin              # FAISS similarity index
+│   ├── vectorizer.pkl               # TF-IDF vectorizer model
+│   └── property_ids.pkl             # Property ID mapping
 │
 ├── 📁 pages/                        # Streamlit Multi-Page Application
 │   ├── 1_Preprocess.py              # Data loading and preprocessing
@@ -54,7 +60,8 @@ mli-rag-demo/
 │
 ├── 📁 tests/                        # Unit Test Suite
 │   ├── test_sql_chat.py             # SQL chat functionality tests
-│   ├── test_rag_chat.py             # RAG chat functionality tests
+│   ├── test_rag_util.py             # RAG functionality tests
+│   ├── test_hybrid_rag_simple.py    # Hybrid RAG implementation tests
 │   ├── test_xls_converter.py        # Data processing tests
 │   └── test_db_util.py              # Database utility tests
 │
@@ -62,12 +69,13 @@ mli-rag-demo/
 │   ├── __init__.py                  # Package initialization
 │   ├── ai_util.py                   # OpenAI client management
 │   ├── db_util.py                   # SQLite database operations
-│   ├── rag_util.py                  # Vector embeddings and FAISS
+│   ├── vector_db_util.py            # Vector database operations
 │   ├── xls_converter.py             # Excel data processing
 │   ├── sql_chat.py                  # LangChain SQL agent
 │   ├── simple_sql_chat.py           # Simplified SQL chat
 │   ├── mock_sql_chat.py             # Mock SQL chat (testing)
-│   └── rag_chat.py                  # RAG-based property analysis
+│   ├── hybrid_rag_util.py           # Hybrid RAG implementation
+│   └── preprocess_util.py           # Data preprocessing pipeline
 │
 ├── 📄 Home.py                       # Main Streamlit application entry
 ├── 📄 requirements.txt              # Python dependencies (version-free)
@@ -83,7 +91,7 @@ mli-rag-demo/
 ### Prerequisites
 
 - **Python 3.11+** (recommended)
-- **OpenAI API Key** (for GPT-4o-mini and embeddings)
+- **OpenAI API Key** (for GPT-4o-mini)
 - **Git** (for cloning the repository)
 
 ### 1. Clone and Setup
@@ -136,6 +144,7 @@ uvicorn api.main:app --reload --port 8000
 - **Automated Excel Processing**: Loads and combines CurrentPortfolio.xlsx (1,250 properties) and MarketedWarehouses.xlsx (5 properties)
 - **Data Cleaning & Validation**: Handles missing values, standardizes formats, validates data integrity
 - **SQLite Database Creation**: Generates optimized database schema with proper indexing
+- **Vector Database Initialization**: Creates property embeddings and FAISS index
 - **Real-time Progress Feedback**: Visual confirmation of data loading with preview tables
 
 **Key Capabilities**:
@@ -170,9 +179,174 @@ Transform natural language questions into executable SQL queries using advanced 
 
 ### 3. 🔍 RAG-Based Property Analysis
 
-**Location**: `pages/3_RAG_Analysis.py`
+**Location**: `pages/3_RAG_Analysis.py`, `utils/vector_db_util.py`
 
 Advanced vector-based analysis using Retrieval-Augmented Generation for property insights.
+
+#### 🧠 RAG Implementation Details
+
+The RAG system is implemented using a **dual-database architecture**:
+
+1. **SQL Database** (`db_util.py`):
+   - Handles structured data storage and retrieval
+   - Supports traditional SQL queries and joins
+   - Optimized for filtering and aggregation operations
+
+2. **Vector Database** (`vector_db_util.py`):
+   - Manages property embeddings and similarity search
+   - Implements FAISS vector index for efficient retrieval
+   - Persists embeddings to disk for fast loading
+
+#### 🔢 Vector Embedding Process
+
+1. **Text Generation**:
+   ```python
+   def create_property_text(property_row):
+       """Create text representation of property for embedding."""
+       text_parts = []
+       text_parts.append(f"Industrial Estate: {property_row['industrial_estate_name']}")
+       text_parts.append(f"Unit: {property_row['unit_name']}")
+       text_parts.append(f"Region: {property_row['region']}")
+       text_parts.append(f"Size: {property_row['size_sqm']:.0f} square meters")
+       text_parts.append(f"Built in: {property_row['build_year']:.0f}")
+       # Add other property characteristics...
+       return ". ".join(text_parts) + "."
+   ```
+
+2. **TF-IDF Vectorization**:
+   ```python
+   # Initialize vectorizer
+   self.vectorizer = TfidfVectorizer(max_features=384, stop_words='english')
+   
+   # Generate embeddings
+   self.property_vectors = self.vectorizer.fit_transform(property_texts).toarray()
+   ```
+
+3. **FAISS Index Creation**:
+   ```python
+   # Create FAISS index
+   self.faiss_index = faiss.IndexFlatIP(self.property_vectors.shape[1])
+   
+   # Normalize vectors for cosine similarity
+   normalized_vectors = self.property_vectors / np.linalg.norm(
+       self.property_vectors, axis=1, keepdims=True
+   )
+   
+   # Add vectors to index
+   self.faiss_index.add(normalized_vectors.astype('float32'))
+   ```
+
+4. **Persistence Layer**:
+   ```python
+   # Save vectorizer
+   with open(self.vectorizer_path, 'wb') as f:
+       pickle.dump(self.vectorizer, f)
+   
+   # Save property vectors
+   np.save(self.vectors_path, self.property_vectors)
+   
+   # Save FAISS index
+   faiss.write_index(self.faiss_index, self.faiss_index_path)
+   ```
+
+#### 🔍 Similarity Search Implementation
+
+```python
+def find_similar_properties(self, target_property_id=None, query_text=None, top_k=10):
+    """Find similar properties using vector similarity."""
+    
+    # Get target vector (from property ID or text query)
+    if target_property_id is not None:
+        # Find property by ID and get its vector
+        target_vector = self.property_vectors[property_idx]
+    elif query_text:
+        # Create embedding for query text
+        target_vector = self.vectorize_query(query_text)
+    
+    # Normalize target vector
+    target_vector = target_vector / np.linalg.norm(target_vector)
+    
+    # Search using FAISS
+    similarities, indices = self.faiss_index.search(
+        target_vector.reshape(1, -1).astype('float32'), 
+        top_k
+    )
+    
+    # Return results with property details
+    results = []
+    for i, (similarity, idx) in enumerate(zip(similarities[0], indices[0])):
+        property_id = self.property_ids[idx]
+        property_data = self.get_property_by_id(property_id)
+        
+        if len(property_data) > 0:
+            prop = property_data.iloc[0].to_dict()
+            prop['similarity_score'] = float(similarity)
+            prop['rank'] = i + 1
+            results.append(prop)
+    
+    return {
+        "success": True,
+        "results": results,
+        "avg_similarity": float(np.mean(similarities[0])),
+        # Additional metadata...
+    }
+```
+
+#### 📊 Portfolio Homogeneity Analysis
+
+The system calculates portfolio homogeneity using vector similarity:
+
+```python
+def calculate_portfolio_homogeneity(self):
+    """Calculate portfolio homogeneity using embeddings."""
+    
+    # Calculate pairwise similarities using normalized vectors
+    normalized_vectors = self.property_vectors / np.linalg.norm(
+        self.property_vectors, axis=1, keepdims=True
+    )
+    similarity_matrix = np.dot(normalized_vectors, normalized_vectors.T)
+    
+    # Remove diagonal (self-similarities)
+    np.fill_diagonal(similarity_matrix, 0)
+    
+    # Calculate overall metrics
+    avg_similarity = np.mean(similarity_matrix)
+    std_similarity = np.std(similarity_matrix)
+    
+    # Analyze marketed vs non-marketed properties
+    # ...
+    
+    # Calculate homogeneity coefficient
+    homogeneity_coefficient = avg_similarity / (std_similarity + 1e-8)
+    
+    return {
+        "overall_homogeneity": float(avg_similarity),
+        "homogeneity_coefficient": float(homogeneity_coefficient),
+        "marketed_vs_portfolio": float(marketed_vs_portfolio),
+        # Additional metrics...
+    }
+```
+
+#### 🔄 Integration with Preprocessing
+
+The vector database is initialized during preprocessing:
+
+```python
+def load_data_to_database(self, df: pd.DataFrame) -> bool:
+    """Load cleaned data into database."""
+    try:
+        # Load data to SQL database
+        # ...
+        
+        # Initialize vector database
+        print("🔄 Initializing vector database...")
+        vector_db.initialize_vectors(force_rebuild=True)
+        
+        return True
+    except Exception as e:
+        print(f"❌ Error loading data to database: {e}")
+        return False
+```
 
 **Core Capabilities**:
 - **Property Similarity Search**: Find similar properties using multi-dimensional embeddings
@@ -181,16 +355,67 @@ Advanced vector-based analysis using Retrieval-Augmented Generation for property
 - **Contextual AI Responses**: Generate insights with property-specific context
 
 **Vector Analysis Features**:
-- **OpenAI Embeddings**: High-dimensional property representations
+- **TF-IDF Embeddings**: Efficient text-based property representations
 - **FAISS Vector Search**: Efficient similarity search and clustering
 - **Cosine Similarity Metrics**: Precise similarity scoring
-- **Dynamic Context Generation**: Adaptive context for AI responses
+- **Persistent Vector Storage**: Fast loading with disk-based storage
 
 ### 4. 🗄️ Database Management
 
-**Location**: `utils/db_util.py`
+**Location**: `utils/db_util.py`, `utils/vector_db_util.py`
 
-Robust SQLite database operations with optimized performance.
+The application uses a dual-database architecture:
+
+#### SQL Database (`PropertyDatabase` class)
+
+```python
+class PropertyDatabase:
+    """Database utility for MLI property data."""
+    
+    def __init__(self, db_path=None):
+        if db_path is None:
+            # Default path: db/mli.db relative to project root
+            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            db_dir = os.path.join(project_root, 'db')
+            os.makedirs(db_dir, exist_ok=True)
+            self.db_path = os.path.join(db_dir, 'mli.db')
+        else:
+            self.db_path = db_path
+        
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+        
+        self.conn = None
+        self.engine = None
+    
+    # Database methods...
+```
+
+#### Vector Database (`PropertyVectorDB` class)
+
+```python
+class PropertyVectorDB:
+    """Vector database for property data using FAISS."""
+    
+    def __init__(self, embeddings_dir=None):
+        if embeddings_dir is None:
+            # Default path: embeddings/ relative to project root
+            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            self.embeddings_dir = os.path.join(project_root, 'embeddings')
+        else:
+            self.embeddings_dir = embeddings_dir
+        
+        # Ensure directory exists
+        os.makedirs(self.embeddings_dir, exist_ok=True)
+        
+        # Paths for saved files
+        self.vectors_path = os.path.join(self.embeddings_dir, 'property_vectors.npy')
+        self.faiss_index_path = os.path.join(self.embeddings_dir, 'faiss_index.bin')
+        self.vectorizer_path = os.path.join(self.embeddings_dir, 'vectorizer.pkl')
+        self.property_ids_path = os.path.join(self.embeddings_dir, 'property_ids.pkl')
+        
+        # Initialize components...
+```
 
 **Database Schema**:
 ```sql
@@ -231,7 +456,7 @@ python -m pytest tests/ -v
 
 # Run specific test suites
 python tests/test_sql_chat.py      # SQL functionality
-python tests/test_rag_chat.py      # RAG functionality
+python tests/test_rag_util.py      # RAG functionality
 python tests/test_db_util.py       # Database operations
 python tests/test_xls_converter.py # Data processing
 ```
@@ -299,7 +524,7 @@ Body: {"question": "What is the portfolio homogeneity?"}
 ### Adding New Features
 
 1. **New Query Types**: Extend `utils/sql_chat.py` with additional query patterns
-2. **Vector Analysis**: Add new similarity metrics in `utils/rag_util.py`
+2. **Vector Analysis**: Add new similarity metrics in `utils/vector_db_util.py`
 3. **UI Components**: Create new pages in `pages/` directory
 4. **API Endpoints**: Extend `api/main.py` with new routes
 
@@ -391,7 +616,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- **OpenAI** for GPT-4o-mini and embedding models
+- **OpenAI** for GPT-4o-mini models
 - **LangChain** for SQL agent framework
 - **Streamlit** for rapid web application development
 - **FAISS** for efficient vector similarity search
