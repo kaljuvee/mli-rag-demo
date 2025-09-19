@@ -5,7 +5,6 @@ import streamlit as st
 import pandas as pd
 import os
 from utils.db_util import db
-from utils.vector_db_util import PropertyVectorDB
 
 # Page configuration
 st.set_page_config(
@@ -14,9 +13,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
-# Initialize databases
-vector_db = PropertyVectorDB()
 
 # Custom CSS for better styling
 st.markdown("""
@@ -81,7 +77,10 @@ st.markdown('<div class="sub-header">Dashboard Overview</div>', unsafe_allow_htm
 
 # Check if database is initialized
 db_initialized = db.check_initialized()
-vector_db_initialized = vector_db.check_initialized()
+# Safely check if vector database is initialized by checking if embeddings directory exists
+project_root = os.path.dirname(os.path.abspath(__file__))
+embeddings_dir = os.path.join(project_root, 'embeddings')
+vector_db_initialized = os.path.exists(embeddings_dir) and len(os.listdir(embeddings_dir)) > 0
 
 # Stats row
 col1, col2, col3, col4 = st.columns(4)
