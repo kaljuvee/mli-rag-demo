@@ -26,7 +26,7 @@ You can deploy the MLI RAG Demo on Render.com in two ways:
    - **Name**: `mli-rag-demo-api` (or your preferred name)
    - **Environment**: `Python`
    - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `uvicorn api.main:app --host 0.0.0.0 --port $PORT`
+   - **Start Command**: `uvicorn main:app --host 0.0.0.0 --port $PORT`
    - **Plan**: Free or Standard (as needed)
 5. Add environment variables:
    - `OPENAI_API_KEY`: Your OpenAI API key
