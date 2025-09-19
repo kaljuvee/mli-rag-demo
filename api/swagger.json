@@ -1,0 +1,989 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "MLI RAG Demo API",
+    "description": "API for MLI Property Portfolio Analysis with RAG and Text-to-SQL capabilities",
+    "version": "1.0.0",
+    "contact": {
+      "name": "MLI Demo Team",
+      "url": "https://github.com/kaljuvee/mli-rag-demo"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://mli-rag-demo-api.onrender.com",
+      "description": "Production API Server"
+    },
+    {
+      "url": "http://localhost:8000",
+      "description": "Local Development Server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "health",
+      "description": "Health check endpoints"
+    },
+    {
+      "name": "properties",
+      "description": "Property data operations"
+    },
+    {
+      "name": "sql",
+      "description": "Text-to-SQL operations"
+    },
+    {
+      "name": "rag",
+      "description": "RAG-based property analysis"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["health"],
+        "summary": "Health check",
+        "description": "Check if the API is running properly",
+        "operationId": "checkHealth",
+        "responses": {
+          "200": {
+            "description": "API is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                },
+                "example": {
+                  "status": "healthy",
+                  "timestamp": "2025-09-19T12:34:56Z",
+                  "version": "1.0.0"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/properties": {
+      "get": {
+        "tags": ["properties"],
+        "summary": "Get all properties",
+        "description": "Retrieve a list of all properties with pagination",
+        "operationId": "getProperties",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of properties to return",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of properties to skip",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "marketed_only",
+            "in": "query",
+            "description": "Filter to only marketed properties",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of properties",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PropertiesResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/properties/{property_id}": {
+      "get": {
+        "tags": ["properties"],
+        "summary": "Get property by ID",
+        "description": "Retrieve a specific property by its ID",
+        "operationId": "getPropertyById",
+        "parameters": [
+          {
+            "name": "property_id",
+            "in": "path",
+            "description": "ID of the property to retrieve",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Property details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PropertyResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Property not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "error": "Property with ID 123 not found"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/properties/search": {
+      "post": {
+        "tags": ["properties"],
+        "summary": "Search properties",
+        "description": "Search properties using SQL-like query string",
+        "operationId": "searchProperties",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PropertySearchRequest"
+              },
+              "example": {
+                "query": "SELECT * FROM properties WHERE region = 'North West' LIMIT 5",
+                "params": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Search results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PropertiesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "error": "Invalid SQL query: syntax error at position 10"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sql/query": {
+      "post": {
+        "tags": ["sql"],
+        "summary": "Text-to-SQL query",
+        "description": "Convert natural language question to SQL and execute it",
+        "operationId": "textToSqlQuery",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TextToSqlRequest"
+              },
+              "example": {
+                "question": "Find the 10 most similar properties to the newly marketed property",
+                "include_sql": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Query results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TextToSqlResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid question",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rag/similar": {
+      "post": {
+        "tags": ["rag"],
+        "summary": "Find similar properties",
+        "description": "Find properties similar to a target property using vector similarity",
+        "operationId": "findSimilarProperties",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimilarPropertiesRequest"
+              },
+              "example": {
+                "property_id": 123,
+                "top_k": 5
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Similar properties",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimilarPropertiesResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Property not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rag/query": {
+      "post": {
+        "tags": ["rag"],
+        "summary": "RAG query",
+        "description": "Query the property database using RAG approach",
+        "operationId": "ragQuery",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RagQueryRequest"
+              },
+              "example": {
+                "question": "What is the portfolio homogeneity?",
+                "include_context": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "RAG query results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RagQueryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid question",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rag/homogeneity": {
+      "get": {
+        "tags": ["rag"],
+        "summary": "Portfolio homogeneity",
+        "description": "Calculate portfolio homogeneity using vector embeddings",
+        "operationId": "portfolioHomogeneity",
+        "responses": {
+          "200": {
+            "description": "Homogeneity analysis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HomogeneityResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "Health status of the API",
+            "example": "healthy"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Current server time",
+            "example": "2025-09-19T12:34:56Z"
+          },
+          "version": {
+            "type": "string",
+            "description": "API version",
+            "example": "1.0.0"
+          }
+        }
+      },
+      "Property": {
+        "type": "object",
+        "properties": {
+          "property_id": {
+            "type": "integer",
+            "description": "Unique identifier for the property"
+          },
+          "industrial_estate_name": {
+            "type": "string",
+            "description": "Name of the industrial estate"
+          },
+          "unit_name": {
+            "type": "string",
+            "description": "Unit name or number"
+          },
+          "region": {
+            "type": "string",
+            "description": "Geographic region"
+          },
+          "latitude": {
+            "type": "number",
+            "format": "float",
+            "description": "Latitude coordinate"
+          },
+          "longitude": {
+            "type": "number",
+            "format": "float",
+            "description": "Longitude coordinate"
+          },
+          "car_parking_spaces": {
+            "type": "integer",
+            "description": "Number of car parking spaces"
+          },
+          "size_sqm": {
+            "type": "number",
+            "format": "float",
+            "description": "Size in square meters"
+          },
+          "build_year": {
+            "type": "number",
+            "format": "float",
+            "description": "Year the property was built"
+          },
+          "yard_depth_m": {
+            "type": "number",
+            "format": "float",
+            "description": "Yard depth in meters"
+          },
+          "min_eaves_m": {
+            "type": "number",
+            "format": "float",
+            "description": "Minimum eaves height in meters"
+          },
+          "max_eaves_m": {
+            "type": "number",
+            "format": "float",
+            "description": "Maximum eaves height in meters"
+          },
+          "doors": {
+            "type": "integer",
+            "description": "Number of loading doors"
+          },
+          "epc_rating": {
+            "type": "string",
+            "description": "Energy Performance Certificate rating"
+          },
+          "is_marketed": {
+            "type": "integer",
+            "description": "Whether the property is currently marketed (1) or not (0)"
+          }
+        }
+      },
+      "PropertiesResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Whether the request was successful",
+            "example": true
+          },
+          "count": {
+            "type": "integer",
+            "description": "Number of properties returned",
+            "example": 10
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total number of properties matching the query",
+            "example": 1255
+          },
+          "properties": {
+            "type": "array",
+            "description": "List of properties",
+            "items": {
+              "$ref": "#/components/schemas/Property"
+            }
+          },
+          "error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Error message if any",
+            "example": null
+          }
+        }
+      },
+      "PropertyResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Whether the request was successful",
+            "example": true
+          },
+          "property": {
+            "$ref": "#/components/schemas/Property"
+          },
+          "error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Error message if any",
+            "example": null
+          }
+        }
+      },
+      "PropertySearchRequest": {
+        "type": "object",
+        "required": ["query"],
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "SQL query string",
+            "example": "SELECT * FROM properties WHERE region = 'North West' LIMIT 5"
+          },
+          "params": {
+            "type": "object",
+            "description": "Query parameters for parameterized queries",
+            "example": {}
+          }
+        }
+      },
+      "TextToSqlRequest": {
+        "type": "object",
+        "required": ["question"],
+        "properties": {
+          "question": {
+            "type": "string",
+            "description": "Natural language question",
+            "example": "Find the 10 most similar properties to the newly marketed property"
+          },
+          "include_sql": {
+            "type": "boolean",
+            "description": "Whether to include the generated SQL in the response",
+            "default": true
+          }
+        }
+      },
+      "TextToSqlResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Whether the request was successful",
+            "example": true
+          },
+          "question": {
+            "type": "string",
+            "description": "Original question",
+            "example": "Find the 10 most similar properties to the newly marketed property"
+          },
+          "sql": {
+            "type": "string",
+            "description": "Generated SQL query",
+            "example": "SELECT p1.*, ABS(p1.size_sqm - p2.size_sqm) AS size_diff, ABS(p1.build_year - p2.build_year) AS year_diff FROM properties p1, properties p2 WHERE p2.is_marketed = 1 AND p1.is_marketed = 0 ORDER BY (size_diff + year_diff) ASC LIMIT 10"
+          },
+          "results": {
+            "type": "array",
+            "description": "Query results",
+            "items": {
+              "type": "object"
+            }
+          },
+          "execution_time": {
+            "type": "number",
+            "format": "float",
+            "description": "Query execution time in seconds",
+            "example": 0.15
+          },
+          "error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Error message if any",
+            "example": null
+          }
+        }
+      },
+      "SimilarPropertiesRequest": {
+        "type": "object",
+        "properties": {
+          "property_id": {
+            "type": "integer",
+            "description": "ID of the target property",
+            "example": 123
+          },
+          "query_text": {
+            "type": "string",
+            "description": "Text description of the property to find similar ones",
+            "example": "Large industrial warehouse with good parking in the Midlands"
+          },
+          "top_k": {
+            "type": "integer",
+            "description": "Number of similar properties to return",
+            "default": 10,
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "oneOf": [
+          {
+            "required": ["property_id"]
+          },
+          {
+            "required": ["query_text"]
+          }
+        ]
+      },
+      "SimilarPropertiesResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Whether the request was successful",
+            "example": true
+          },
+          "query_type": {
+            "type": "string",
+            "description": "Type of similarity query",
+            "example": "similarity_search"
+          },
+          "query_description": {
+            "type": "string",
+            "description": "Description of the query",
+            "example": "Property ID 123"
+          },
+          "target_property_id": {
+            "type": "integer",
+            "nullable": true,
+            "description": "ID of the target property if provided",
+            "example": 123
+          },
+          "query_text": {
+            "type": "string",
+            "nullable": true,
+            "description": "Query text if provided",
+            "example": null
+          },
+          "top_k": {
+            "type": "integer",
+            "description": "Number of similar properties requested",
+            "example": 10
+          },
+          "results": {
+            "type": "array",
+            "description": "Similar properties",
+            "items": {
+              "type": "object",
+              "properties": {
+                "property_id": {
+                  "type": "integer",
+                  "description": "Property ID"
+                },
+                "similarity_score": {
+                  "type": "number",
+                  "format": "float",
+                  "description": "Similarity score"
+                },
+                "rank": {
+                  "type": "integer",
+                  "description": "Rank in similarity results"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "total_properties_searched": {
+            "type": "integer",
+            "description": "Total number of properties searched",
+            "example": 1255
+          },
+          "avg_similarity": {
+            "type": "number",
+            "format": "float",
+            "description": "Average similarity score",
+            "example": 0.75
+          },
+          "max_similarity": {
+            "type": "number",
+            "format": "float",
+            "description": "Maximum similarity score",
+            "example": 0.95
+          },
+          "min_similarity": {
+            "type": "number",
+            "format": "float",
+            "description": "Minimum similarity score",
+            "example": 0.65
+          },
+          "embedding_model": {
+            "type": "string",
+            "description": "Embedding model used",
+            "example": "TF-IDF"
+          },
+          "error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Error message if any",
+            "example": null
+          }
+        }
+      },
+      "RagQueryRequest": {
+        "type": "object",
+        "required": ["question"],
+        "properties": {
+          "question": {
+            "type": "string",
+            "description": "Question about the property portfolio",
+            "example": "What is the portfolio homogeneity?"
+          },
+          "include_context": {
+            "type": "boolean",
+            "description": "Whether to include the context used for RAG",
+            "default": true
+          }
+        }
+      },
+      "RagQueryResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Whether the request was successful",
+            "example": true
+          },
+          "question": {
+            "type": "string",
+            "description": "Original question",
+            "example": "What is the portfolio homogeneity?"
+          },
+          "answer": {
+            "type": "string",
+            "description": "Generated answer",
+            "example": "The portfolio has a moderate homogeneity score of 0.58, indicating a balanced mix of property characteristics across the estate."
+          },
+          "context": {
+            "type": "array",
+            "description": "Context used for RAG",
+            "items": {
+              "type": "object",
+              "properties": {
+                "property_id": {
+                  "type": "integer",
+                  "description": "Property ID"
+                },
+                "text": {
+                  "type": "string",
+                  "description": "Property text used as context"
+                },
+                "relevance_score": {
+                  "type": "number",
+                  "format": "float",
+                  "description": "Relevance score"
+                }
+              }
+            }
+          },
+          "confidence": {
+            "type": "number",
+            "format": "float",
+            "description": "Confidence score for the answer",
+            "example": 0.85
+          },
+          "execution_time": {
+            "type": "number",
+            "format": "float",
+            "description": "Execution time in seconds",
+            "example": 0.75
+          },
+          "error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Error message if any",
+            "example": null
+          }
+        }
+      },
+      "HomogeneityResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Whether the request was successful",
+            "example": true
+          },
+          "query_type": {
+            "type": "string",
+            "description": "Type of analysis",
+            "example": "homogeneity_analysis"
+          },
+          "total_properties": {
+            "type": "integer",
+            "description": "Total number of properties analyzed",
+            "example": 1255
+          },
+          "marketed_properties": {
+            "type": "integer",
+            "description": "Number of marketed properties",
+            "example": 5
+          },
+          "portfolio_properties": {
+            "type": "integer",
+            "description": "Number of portfolio properties",
+            "example": 1250
+          },
+          "embedding_model": {
+            "type": "string",
+            "description": "Embedding model used",
+            "example": "TF-IDF"
+          },
+          "overall_homogeneity": {
+            "type": "number",
+            "format": "float",
+            "description": "Overall portfolio homogeneity score",
+            "example": 0.58
+          },
+          "homogeneity_std": {
+            "type": "number",
+            "format": "float",
+            "description": "Standard deviation of homogeneity",
+            "example": 0.15
+          },
+          "homogeneity_coefficient": {
+            "type": "number",
+            "format": "float",
+            "description": "Homogeneity coefficient",
+            "example": 3.87
+          },
+          "marketed_vs_portfolio": {
+            "type": "number",
+            "format": "float",
+            "description": "Similarity between marketed and portfolio properties",
+            "example": 0.62
+          },
+          "marketed_internal_homogeneity": {
+            "type": "number",
+            "format": "float",
+            "description": "Homogeneity within marketed properties",
+            "example": 0.75
+          },
+          "portfolio_internal_homogeneity": {
+            "type": "number",
+            "format": "float",
+            "description": "Homogeneity within portfolio properties",
+            "example": 0.55
+          },
+          "similarity_distribution": {
+            "type": "object",
+            "description": "Distribution of similarity scores",
+            "properties": {
+              "min": {
+                "type": "number",
+                "format": "float",
+                "description": "Minimum similarity score",
+                "example": 0.1
+              },
+              "max": {
+                "type": "number",
+                "format": "float",
+                "description": "Maximum similarity score",
+                "example": 0.95
+              },
+              "median": {
+                "type": "number",
+                "format": "float",
+                "description": "Median similarity score",
+                "example": 0.55
+              },
+              "percentile_25": {
+                "type": "number",
+                "format": "float",
+                "description": "25th percentile similarity score",
+                "example": 0.35
+              },
+              "percentile_75": {
+                "type": "number",
+                "format": "float",
+                "description": "75th percentile similarity score",
+                "example": 0.75
+              }
+            }
+          },
+          "error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Error message if any",
+            "example": null
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Always false for error responses",
+            "example": false
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message",
+            "example": "An error occurred while processing your request"
+          }
+        }
+      }
+    }
+  }
+}

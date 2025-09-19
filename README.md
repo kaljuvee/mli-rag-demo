@@ -23,7 +23,8 @@ The MLI RAG Demo implements a sophisticated multi-layered architecture combining
 ```
 mli-rag-demo/
 ├── 📁 api/                          # FastAPI Backend Services
-│   └── main.py                      # RESTful API endpoints
+│   ├── main.py                      # RESTful API endpoints
+│   └── swagger.json                 # OpenAPI specification
 │
 ├── 📁 data/                         # Raw Data Files
 │   ├── CurrentPortfolio.xlsx        # 1,250 current properties
@@ -83,6 +84,8 @@ mli-rag-demo/
 ├── 📄 .env                          # Environment configuration (local)
 ├── 📄 .gitignore                    # Git ignore patterns
 ├── 📄 PROJECT_SUMMARY.md            # Detailed project documentation
+├── 📄 RENDER_DEPLOYMENT.md          # Render.com deployment guide
+├── 📄 render.yaml                   # Render.com deployment configuration
 └── 📄 README.md                     # This comprehensive guide
 ```
 
@@ -480,7 +483,7 @@ All test results are saved as structured JSON files in `test-data/` for:
 
 ### FastAPI Endpoints
 
-**Location**: `api/main.py`
+**Location**: `api/main.py`, `api/swagger.json`
 
 ```python
 # Health Check
@@ -502,6 +505,11 @@ POST /rag/query
 Body: {"question": "What is the portfolio homogeneity?"}
 → {"answer": "...", "context": [...], "confidence": 0.95}
 ```
+
+The API is fully documented using OpenAPI/Swagger:
+- **Interactive Documentation**: Available at `/docs` endpoint
+- **OpenAPI Specification**: Available at `/openapi.json` endpoint
+- **Swagger JSON**: Included in the repository at `api/swagger.json`
 
 ## 📈 Performance Metrics
 
@@ -548,37 +556,30 @@ CACHE_TTL=3600                           # Cache time-to-live in seconds
 MAX_QUERY_TIME=30                        # Maximum query execution time
 ```
 
-## 🚀 Deployment Options
+## 🚀 Deployment on Render.com
 
-### Local Development
+The MLI RAG Demo is designed for easy deployment on [Render.com](https://render.com), a simple and affordable cloud platform.
 
-```bash
-# Development server with hot reload
-streamlit run Home.py --server.runOnSave true
-```
+### Deployment Options
 
-### Production Deployment
+1. **Blueprint Deployment** (Recommended):
+   - Use the included `render.yaml` file for automatic configuration
+   - Render will create both the API and Streamlit services
 
-#### Streamlit Cloud
-1. Connect GitHub repository to Streamlit Cloud
-2. Configure environment variables in Streamlit dashboard
-3. Deploy with automatic SSL and CDN
+2. **Manual Deployment**:
+   - Deploy the API and Streamlit app separately through the Render Dashboard
+   - Configure each service with the appropriate build and start commands
 
-#### Docker Deployment
-```dockerfile
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY . .
-EXPOSE 8501
-CMD ["streamlit", "run", "Home.py", "--server.port=8501", "--server.address=0.0.0.0"]
-```
+### Quick Deployment Steps
 
-#### Cloud Platforms
-- **AWS**: Deploy on EC2 with Application Load Balancer
-- **Google Cloud**: Use Cloud Run for serverless deployment
-- **Azure**: Deploy on Container Instances or App Service
+1. Fork or clone the repository to your GitHub account
+2. Sign up for a [Render.com](https://render.com) account
+3. In your Render Dashboard, click **New** and select **Blueprint**
+4. Connect your GitHub repository
+5. Add your `OPENAI_API_KEY` when prompted
+6. Click **Apply** to deploy both services
+
+For detailed deployment instructions, see [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md).
 
 ## 📊 Data Sources
 
