@@ -217,3 +217,9 @@ test-data/*.png
 test-data/*.webp
 test-data/*.jpg
 test-data/*.jpeg
+
+# Exclude vector files but keep directory structure
+embeddings/*.npy
+embeddings/*.bin
+embeddings/*.pkl
+# Keep .gitkeep and README.md in embeddings directory

@@ -1,0 +1,1 @@
+# Database Directory\n\nThis directory stores the SQLite database file for the MLI Demo.\n\nFiles generated during preprocessing:\n- mli.db - SQLite database containing property data\n\nThis file is generated automatically when running the preprocessing step.
