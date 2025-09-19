@@ -1,0 +1,17 @@
+{
+  "test": "vector_initialization",
+  "success": true,
+  "properties_loaded": 100,
+  "vector_dimensions": 128,
+  "vector_shape": [
+    100,
+    128
+  ],
+  "sample_vector_stats": {
+    "mean": 0.5024286197053305,
+    "std": 0.30478633770185287,
+    "min": 0.00287032703115897,
+    "max": 0.9973228504514805
+  },
+  "error": null
+}

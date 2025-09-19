@@ -1,0 +1,17 @@
+{
+  "success": true,
+  "query_type": "homogeneity_analysis",
+  "total_properties": 100,
+  "marketed_properties": 0,
+  "overall_homogeneity": 0.7268521048372708,
+  "homogeneity_std": 0.08497903136789973,
+  "marketed_vs_portfolio": 0.0,
+  "marketed_internal_homogeneity": 0.0,
+  "homogeneity_coefficient": 8.553310241410118,
+  "similarity_distribution": {
+    "min": 0.5092329085810732,
+    "max": 0.8610546027483925,
+    "median": 0.740147169982263
+  },
+  "error": null
+}

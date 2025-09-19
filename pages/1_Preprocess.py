@@ -1,57 +1,136 @@
-'''
-Streamlit page for preprocessing the data.
-'''
+"""
+Streamlit page for preprocessing the MLI property data.
+"""
 import streamlit as st
 import pandas as pd
-from utils import xls_converter, db_util
+import os
+import sys
+
+# Add the project root to the path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from utils.preprocess_util import run_preprocessing
 
 st.set_page_config(page_title="Preprocess Data", page_icon="⚙️")
 
-st.title("Preprocess and Load Data")
+st.title("⚙️ Preprocess and Load Data")
 
-if st.button("Run Preprocessing"):
-    with st.spinner("Loading and preprocessing data..."):
-        try:
-            # Load and preprocess data
-            current_portfolio_df = xls_converter.load_current_portfolio("data/CurrentPortfolio.xlsx")
-            marketed_warehouses_df = xls_converter.load_marketed_warehouses("data/MarketedWarehouses.xlsx")
+st.write("""
+This page loads the Excel files, cleans the data, and stores it in a local SQLite database.
 
-            # Add a flag to distinguish between the two datasets
-            current_portfolio_df["is_marketed"] = False
-            marketed_warehouses_df["is_marketed"] = True
+**Data Sources:**
+- CurrentPortfolio.xlsx: 1,250 current properties
+- MarketedWarehouses.xlsx: 5 marketed properties
 
-            # Combine the dataframes
-            combined_df = pd.concat([current_portfolio_df, marketed_warehouses_df], ignore_index=True)
+**Processing Steps:**
+1. Load and validate Excel files
+2. Clean and standardize data formats
+3. Handle missing values with appropriate strategies
+4. Create optimized SQLite database schema
+5. Load data with proper indexing for performance
+""")
+
+if st.button("Run Preprocessing", type="primary"):
+    try:
+        with st.spinner("Loading and processing data..."):
+            # Run the complete preprocessing pipeline
+            result = run_preprocessing()
             
-            # Rename columns to be database-friendly
-            combined_df.rename(columns={
-                'Property Id': 'property_id',
-                'Industrial Estate Name': 'industrial_estate_name',
-                'Unit Name': 'unit_name',
-                'Region': 'region',
-                'Latitude': 'latitude',
-                'Longitude': 'longitude',
-                'Car Parking Spaces #': 'car_parking_spaces',
-                'Size sqm': 'size_sqm',
-                'Build Year': 'build_year',
-                'Yard Depth m': 'yard_depth_m',
-                'Min. Eaves m': 'min_eaves_m',
-                'Max. Eaves m': 'max_eaves_m',
-                'Doors #': 'doors',
-                'EPC Rating': 'epc_rating'
-            }, inplace=True)
+        if result['success']:
+            st.success("✅ Data successfully preprocessed and loaded into the database!")
+            
+            # Display comprehensive statistics
+            st.subheader("📊 Processing Summary")
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Total Properties", result['total_properties'])
+            with col2:
+                st.metric("Current Properties", result['current_properties'])
+            with col3:
+                st.metric("Marketed Properties", result['marketed_properties'])
+            
+            # Show detailed statistics
+            if result['statistics']:
+                st.subheader("📈 Dataset Statistics")
+                
+                stats = result['statistics']
+                
+                # Regional distribution
+                if 'regions' in stats and stats['regions']:
+                    st.write("**Regional Distribution:**")
+                    region_df = pd.DataFrame(list(stats['regions'].items()), 
+                                           columns=['Region', 'Count'])
+                    st.dataframe(region_df, use_container_width=True)
+                
+                # Key metrics
+                col1, col2 = st.columns(2)
+                with col1:
+                    if 'avg_size_sqm' in stats:
+                        st.metric("Average Size", f"{stats['avg_size_sqm']:,.0f} sqm")
+                with col2:
+                    if 'avg_build_year' in stats:
+                        st.metric("Average Build Year", f"{stats['avg_build_year']:.0f}")
+                
+                # Data quality metrics
+                if 'properties_with_coordinates' in stats:
+                    coord_pct = (stats['properties_with_coordinates'] / stats['total_properties']) * 100
+                    st.metric("Properties with Coordinates", 
+                             f"{stats['properties_with_coordinates']} ({coord_pct:.1f}%)")
+            
+            # Show sample data
+            if result['sample_data']:
+                st.subheader("🔍 Data Preview")
+                sample_df = pd.DataFrame(result['sample_data'])
+                st.dataframe(sample_df, use_container_width=True)
+            
+            # Database information
+            st.subheader("🗄️ Database Information")
+            st.info(f"**Database Location:** `{result['database_path']}`")
+            st.write("The database includes optimized indexes for:")
+            st.write("- Marketing status (is_marketed)")
+            st.write("- Geographic coordinates (latitude, longitude)")
+            st.write("- Property size and build year")
+            st.write("- Regional distribution")
+            
+        else:
+            st.error(f"❌ Preprocessing failed: {result['error']}")
+            st.write("**Troubleshooting Tips:**")
+            st.write("1. Ensure Excel files exist in the `data/` directory")
+            st.write("2. Check file permissions for database creation")
+            st.write("3. Verify sufficient disk space for database")
+            st.write("4. Check the error message above for specific details")
+            
+    except Exception as e:
+        st.error(f"❌ An unexpected error occurred: {e}")
+        st.write("**Error Details:**")
+        st.code(str(e))
+        
+        st.write("**Please check:**")
+        st.write("- Excel files are present in the `data/` directory")
+        st.write("- Database directory has write permissions")
+        st.write("- All required dependencies are installed")
 
+# Add information section
+st.subheader("ℹ️ About the Data")
+st.write("""
+**Current Portfolio (1,250 properties):**
+- Industrial properties across UK regions
+- Complete property details including size, location, build year
+- Physical characteristics (eaves height, parking, doors)
+- EPC ratings and regional classifications
 
-            # Create database and table
-            db_util.create_tables()
+**Marketed Warehouses (5 properties):**
+- Cherry Lane (Unit 10, North West)
+- Tech Hub (Unit 8, South East)
+- Spitfire Park (Unit 42, Midlands)
+- Stable Lane (Unit 14, South East)
+- Chancery Depot (Unit 2)
 
-            # Load data into the database
-            db_util.load_df_to_db(combined_df, "properties")
-
-            st.success("Data successfully preprocessed and loaded into the database!")
-            st.write("### Combined Data Preview")
-            st.dataframe(combined_df.head())
-
-        except Exception as e:
-            st.error(f"An error occurred: {e}")
-
+**Database Schema:**
+The processed data is stored in a SQLite database with optimized schema for:
+- Fast similarity searches
+- Geographic proximity queries
+- Regional and size-based filtering
+- Correlation analysis across property characteristics
+""")
