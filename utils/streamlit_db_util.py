@@ -7,13 +7,7 @@ import pandas as pd
 from sqlalchemy import create_engine, text
 import streamlit as st
 
-def get_db_path():
-    """
-    Get the database path in a Streamlit-friendly way.
-    For Streamlit Cloud, we use a path in the session's temporary directory.
-    """
-    # For Streamlit Cloud, use a path in the session's temporary directory
-    return os.path.join("/tmp", "mli.db")
+from .streamlit_secrets import get_db_path
 
 # Get the database path
 DB_FILE = get_db_path()
