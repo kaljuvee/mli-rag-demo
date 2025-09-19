@@ -424,79 +424,27 @@ class PropertyVectorDB:
         # Ensure directory exists
         os.makedirs(self.embeddings_dir, exist_ok=True)
         
-        # Paths for saved files
+        # Define file paths
         self.vectors_path = os.path.join(self.embeddings_dir, 'property_vectors.npy')
         self.faiss_index_path = os.path.join(self.embeddings_dir, 'faiss_index.bin')
         self.vectorizer_path = os.path.join(self.embeddings_dir, 'vectorizer.pkl')
         self.property_ids_path = os.path.join(self.embeddings_dir, 'property_ids.pkl')
         
-        # Initialize components...
+        # Initialize properties
+        self.property_vectors = None
+        self.faiss_index = None
+        self.vectorizer = None
+        self.property_ids = None
+        
+        # Load if available
+        self.load_vectors()
 ```
 
-**Database Schema**:
-```sql
-CREATE TABLE properties (
-    property_id REAL,
-    industrial_estate_name TEXT,
-    unit_name TEXT,
-    region TEXT,
-    latitude REAL,
-    longitude REAL,
-    car_parking_spaces INTEGER,
-    size_sqm REAL,
-    build_year REAL,
-    yard_depth_m REAL,
-    min_eaves_m REAL,
-    max_eaves_m REAL,
-    doors INTEGER,
-    epc_rating TEXT,
-    is_marketed INTEGER
-);
-```
+### 5. 🌐 RESTful API
 
-**Performance Features**:
-- Optimized indexing for common queries
-- Connection pooling and management
-- Transaction safety and rollback support
-- Query result caching
+**Location**: `main.py`
 
-## 🧪 Testing Framework
-
-### Comprehensive Unit Testing
-
-The project includes extensive unit tests with JSON result validation:
-
-```bash
-# Run all tests
-python -m pytest tests/ -v
-
-# Run specific test suites
-python tests/test_sql_chat.py      # SQL functionality
-python tests/test_rag_util.py      # RAG functionality
-python tests/test_db_util.py       # Database operations
-python tests/test_xls_converter.py # Data processing
-```
-
-### Test Coverage
-
-- **SQL Chat Tests**: 6 test cases covering query generation and execution
-- **RAG Analysis Tests**: 8 test cases covering vector operations and similarity search
-- **Database Tests**: 4 test cases covering CRUD operations and schema validation
-- **Data Processing Tests**: 3 test cases covering Excel parsing and transformation
-
-### JSON Test Results
-
-All test results are saved as structured JSON files in `test-data/` for:
-- **Result Validation**: Verify query outputs against expected results
-- **Performance Monitoring**: Track query execution times and accuracy
-- **Regression Testing**: Ensure consistent behavior across updates
-- **Documentation**: Provide examples of expected system behavior
-
-## 🔧 API Documentation
-
-### FastAPI Endpoints
-
-**Location**: `main.py`, `api/swagger.json`
+The application provides a comprehensive RESTful API for programmatic access:
 
 ```python
 # Health Check
@@ -539,6 +487,39 @@ The API is fully documented using OpenAPI/Swagger:
 - **Vector Search**: FAISS enables sub-second search on millions of vectors
 - **Concurrent Users**: Streamlit supports 10+ concurrent users
 - **Memory Usage**: ~200MB baseline, ~500MB with full vector cache
+
+## 🔮 Future Improvements
+
+### 1. **Advanced Embedding Models**
+- **Replace TF-IDF with Neural Embeddings**: Upgrade from TF-IDF to more sophisticated embedding models like OpenAI's text-embedding-3-large or open-source alternatives
+- **Fine-tuned Domain Embeddings**: Train domain-specific embeddings on real estate data to capture nuanced property relationships
+- **Multi-modal Embeddings**: Incorporate property images and floor plans into the embedding space for visual similarity
+
+### 2. **Enterprise-grade Vector Databases**
+- **ChromaDB Integration**: Replace FAISS with ChromaDB for better metadata filtering and hybrid search
+- **Weaviate Implementation**: Implement Weaviate for semantic search with GraphQL interface
+- **Pinecone or Milvus**: Scale to millions of properties with cloud-based vector databases
+- **Vector Database Benchmarking**: Compare performance across different vector stores for optimal selection
+
+### 3. **Open Source LLM Integration**
+- **LLAMA Integration**: Replace OpenAI with Meta's LLAMA models for cost-effective deployment
+- **Kimi 2 Implementation**: Integrate Kimi 2 for improved reasoning capabilities
+- **Deepseek Coder**: Use specialized models for SQL generation
+- **Model Provider Flexibility**: Support multiple providers (OpenRouter, Together AI) for redundancy
+- **Local LLM Deployment**: Enable fully offline operation with quantized models
+
+### 4. **Advanced Analytics Features**
+- **Time-series Analysis**: Track property value changes over time
+- **Market Segmentation**: Automatically identify property clusters and market segments
+- **Predictive Analytics**: Forecast property values and market trends
+- **Geospatial Visualization**: Interactive maps showing property distribution and clusters
+
+### 5. **Enterprise Integration**
+- **SSO Authentication**: Enterprise authentication with SAML/OAuth
+- **Role-based Access Control**: Granular permissions for different user types
+- **Audit Logging**: Comprehensive activity tracking for compliance
+- **Scheduled Reports**: Automated report generation and distribution
+- **Data Pipeline Integration**: Connect to enterprise data warehouses and BI tools
 
 ## 🛠️ Development Guide
 
