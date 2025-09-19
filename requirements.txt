@@ -4,6 +4,7 @@ numpy
 openai
 langchain
 langchain-openai
+langchain-community
 sqlalchemy
 faiss-cpu
 python-dotenv
@@ -13,3 +14,4 @@ plotly
 fastapi
 uvicorn
 geopy
+pydantic
