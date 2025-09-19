@@ -10,6 +10,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.preprocess_util import run_preprocessing
+from utils.streamlit_db_util import DB_FILE, check_db_initialized
 
 st.set_page_config(page_title="Preprocess Data", page_icon="⚙️")
 
@@ -30,14 +31,40 @@ This page loads the Excel files, cleans the data, and stores it in a local SQLit
 5. Load data with proper indexing for performance
 """)
 
-if st.button("Run Preprocessing", type="primary"):
+# Check if data is already loaded
+if check_db_initialized():
+    st.success("✅ Data is already loaded in the database.")
+    
+    # Option to reload data
+    if st.button("Reload Data"):
+        st.session_state.preprocess_done = False
+
+# Function to get the absolute path to data files
+def get_data_path(filename):
+    # Get the directory of the current file
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    # Go up one level to the project root
+    project_root = os.path.dirname(current_dir)
+    # Return the path to the data file
+    return os.path.join(project_root, "data", filename)
+
+if st.button("Run Preprocessing", type="primary") or st.session_state.get('preprocess_done') == False:
     try:
         with st.spinner("Loading and processing data..."):
-            # Run the complete preprocessing pipeline
-            result = run_preprocessing()
+            # Get paths to data files
+            current_portfolio_path = get_data_path("CurrentPortfolio.xlsx")
+            marketed_warehouses_path = get_data_path("MarketedWarehouses.xlsx")
+            
+            # Run the complete preprocessing pipeline with Streamlit-specific DB path
+            result = run_preprocessing(
+                current_portfolio_path=current_portfolio_path,
+                marketed_warehouses_path=marketed_warehouses_path,
+                db_path=DB_FILE
+            )
             
         if result['success']:
             st.success("✅ Data successfully preprocessed and loaded into the database!")
+            st.session_state.preprocess_done = True
             
             # Display comprehensive statistics
             st.subheader("📊 Processing Summary")
@@ -100,6 +127,7 @@ if st.button("Run Preprocessing", type="primary"):
             st.write("2. Check file permissions for database creation")
             st.write("3. Verify sufficient disk space for database")
             st.write("4. Check the error message above for specific details")
+            st.session_state.preprocess_done = False
             
     except Exception as e:
         st.error(f"❌ An unexpected error occurred: {e}")
@@ -110,6 +138,7 @@ if st.button("Run Preprocessing", type="primary"):
         st.write("- Excel files are present in the `data/` directory")
         st.write("- Database directory has write permissions")
         st.write("- All required dependencies are installed")
+        st.session_state.preprocess_done = False
 
 # Add information section
 st.subheader("ℹ️ About the Data")
