@@ -10,53 +10,53 @@
     ],
     "sample_data": [
       {
-        "property_id": null,
+        "property_id": 0.0,
         "industrial_estate_name": "Cherry Lane",
         "unit_name": "Unit 10",
         "region": "North West",
         "latitude": 52.46718638257576,
         "longitude": -3.7840028971023973,
-        "car_parking_spaces": 30,
+        "car_parking_spaces": null,
         "size_sqm": 16860.130015843635,
-        "build_year": 1977,
+        "build_year": 1977.0,
         "yard_depth_m": 0.0,
         "min_eaves_m": 0.0,
         "max_eaves_m": 0.0,
-        "doors": 0,
+        "doors": null,
         "epc_rating": "Not Available",
         "is_marketed": 1
       },
       {
-        "property_id": null,
+        "property_id": 0.0,
         "industrial_estate_name": "Tech Hub",
         "unit_name": "Unit 8",
         "region": "South East",
         "latitude": 0.0,
         "longitude": 0.0,
-        "car_parking_spaces": 23,
+        "car_parking_spaces": null,
         "size_sqm": 905.5239479867516,
-        "build_year": 1976,
+        "build_year": 0.0,
         "yard_depth_m": 0.0,
         "min_eaves_m": 0.0,
         "max_eaves_m": 0.0,
-        "doors": 0,
+        "doors": null,
         "epc_rating": "Not Available",
         "is_marketed": 1
       },
       {
-        "property_id": null,
+        "property_id": 0.0,
         "industrial_estate_name": "Spitfire Park",
         "unit_name": "Unit 42",
         "region": "Midlands",
         "latitude": 53.505830910791325,
         "longitude": -1.905054480453693,
-        "car_parking_spaces": 49,
+        "car_parking_spaces": null,
         "size_sqm": 2294.4981097472573,
-        "build_year": 1976,
+        "build_year": 1976.0,
         "yard_depth_m": 0.0,
         "min_eaves_m": 0.0,
         "max_eaves_m": 0.0,
-        "doors": 0,
+        "doors": null,
         "epc_rating": "B",
         "is_marketed": 1
       }
@@ -88,7 +88,7 @@
     ],
     "sample_data": [
       {
-        "avg_size_sqm": 24405.091762904332
+        "avg_size_sqm": 24405.091762904372
       }
     ]
   }
