@@ -7,6 +7,15 @@
 
 A comprehensive **Retrieval-Augmented Generation (RAG)** demonstration application for real estate portfolio analysis, featuring advanced AI-powered querying, property similarity analysis, and intelligent data insights. Built for the MLI (Machine Learning Infrastructure) assessment, this application showcases modern AI engineering practices with production-ready architecture.
 
+## 🚀 Live Demo
+
+The application is deployed and available at:
+
+- **Streamlit Web Interface**: [https://mli-rag-demo.streamlit.app](https://mli-rag-demo.streamlit.app)
+- **API Documentation**: 
+  - Swagger UI: [https://mli-rag-demo-api.onrender.com/docs](https://mli-rag-demo-api.onrender.com/docs)
+  - OpenAPI JSON: [https://mli-rag-demo-api.onrender.com/openapi.json](https://mli-rag-demo-api.onrender.com/openapi.json)
+
 ## 🏗️ Architecture Overview
 
 The MLI RAG Demo implements a sophisticated multi-layered architecture combining:
@@ -22,8 +31,7 @@ The MLI RAG Demo implements a sophisticated multi-layered architecture combining
 
 ```
 mli-rag-demo/
-├── 📁 api/                          # FastAPI Backend Services
-│   ├── main.py                      # RESTful API endpoints
+├── 📁 api/                          # API Documentation
 │   └── swagger.json                 # OpenAPI specification
 │
 ├── 📁 data/                         # Raw Data Files
@@ -79,6 +87,7 @@ mli-rag-demo/
 │   └── preprocess_util.py           # Data preprocessing pipeline
 │
 ├── 📄 Home.py                       # Main Streamlit application entry
+├── 📄 main.py                       # FastAPI application (root level)
 ├── 📄 requirements.txt              # Python dependencies (version-free)
 ├── 📄 .env.sample                   # Environment variables template
 ├── 📄 .env                          # Environment configuration (local)
@@ -129,14 +138,18 @@ echo "OPENAI_API_KEY=your_openai_api_key_here" > .env
 streamlit run Home.py
 
 # Alternative: Start FastAPI backend
-uvicorn api.main:app --reload --port 8000
+uvicorn main:app --reload --port 8000
 ```
 
 ### 4. Access the Application
 
-- **Streamlit Web Interface**: http://localhost:8501
-- **FastAPI Documentation**: http://localhost:8000/docs
-- **API Health Check**: http://localhost:8000/health
+- **Local Streamlit Web Interface**: http://localhost:8501
+- **Local FastAPI Documentation**: http://localhost:8000/docs
+- **Local API Health Check**: http://localhost:8000/health
+
+- **Deployed Streamlit Web Interface**: https://mli-rag-demo.streamlit.app
+- **Deployed API Documentation**: https://mli-rag-demo-api.onrender.com/docs
+- **Deployed API Health Check**: https://mli-rag-demo-api.onrender.com/health
 
 ## 🎯 Core Features
 
@@ -483,7 +496,7 @@ All test results are saved as structured JSON files in `test-data/` for:
 
 ### FastAPI Endpoints
 
-**Location**: `api/main.py`, `api/swagger.json`
+**Location**: `main.py`, `api/swagger.json`
 
 ```python
 # Health Check
@@ -534,7 +547,7 @@ The API is fully documented using OpenAPI/Swagger:
 1. **New Query Types**: Extend `utils/sql_chat.py` with additional query patterns
 2. **Vector Analysis**: Add new similarity metrics in `utils/vector_db_util.py`
 3. **UI Components**: Create new pages in `pages/` directory
-4. **API Endpoints**: Extend `api/main.py` with new routes
+4. **API Endpoints**: Extend `main.py` with new routes
 
 ### Code Quality Standards
 

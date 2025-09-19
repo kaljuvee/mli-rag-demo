@@ -1,13 +1,82 @@
-'''
+"""
 Streamlit page for Text-to-SQL functionality using simplified SQL chat.
-'''
+"""
 import streamlit as st
+import pandas as pd
+import json
+import time
 from utils.mock_sql_chat import MockSQLChat
 from utils.db_util import db
 
-st.set_page_config(page_title="Text-to-SQL", page_icon="🤖")
+# Page configuration
+st.set_page_config(
+    page_title="Text-to-SQL",
+    page_icon="🔍",
+    layout="wide"
+)
 
-st.title("Text-to-SQL Querying with AI Agent")
+# Custom CSS for better styling
+st.markdown("""
+<style>
+    .main-header {
+        font-size: 2.2rem;
+        color: #1E88E5;
+        margin-bottom: 1rem;
+    }
+    .result-header {
+        font-size: 1.5rem;
+        color: #0D47A1;
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
+    }
+    .sql-box {
+        background-color: #f0f2f6;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+        font-family: monospace;
+    }
+    .success-box {
+        background-color: #e8f5e9;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-left: 5px solid #4CAF50;
+    }
+    .metrics-container {
+        background-color: #e3f2fd;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-around;
+    }
+    .metric-item {
+        text-align: center;
+    }
+    .metric-value {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: #1E88E5;
+    }
+    .metric-label {
+        font-size: 0.9rem;
+        color: #424242;
+    }
+    .json-viewer {
+        background-color: #f5f5f5;
+        border-radius: 5px;
+        padding: 10px;
+        max-height: 300px;
+        overflow-y: auto;
+        font-family: monospace;
+        font-size: 0.9rem;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Main header
+st.markdown('<div class="main-header">Text-to-SQL Querying with AI Agent</div>', unsafe_allow_html=True)
 
 st.write("Ask questions about the MLI property database in natural language. The AI agent will generate and execute SQL queries for you.")
 
@@ -41,14 +110,56 @@ try:
         "Find the 10 most similar properties in the estate to the newly marketed property"
     )
     
-    if st.button("Get Answer"):
+    if st.button("Get Answer", type="primary"):
         if user_question:
             with st.spinner("Processing your question with AI agent..."):
                 try:
+                    start_time = time.time()
                     result = sql_assistant.chat_with_database(user_question)
+                    execution_time = time.time() - start_time
                     
                     if result["success"]:
-                        st.write("### AI Agent Response")
+                        # Success message
+                        st.markdown('<div class="success-box">Query executed successfully.</div>', unsafe_allow_html=True)
+                        
+                        # Display metrics
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric("Results Found", len(result["results"]))
+                        with col2:
+                            st.metric("Execution Time", f"{execution_time:.2f}s")
+                        with col3:
+                            st.metric("Confidence", f"{result.get('confidence', 0.9):.2f}")
+                        
+                        # Display SQL query
+                        st.markdown("### Generated SQL Query")
+                        st.markdown('<div class="sql-box">' + result["sql"] + '</div>', unsafe_allow_html=True)
+                        
+                        # Display results as DataFrame
+                        st.markdown("### Results Table")
+                        if result["results"]:
+                            df = pd.DataFrame(result["results"])
+                            st.dataframe(df, use_container_width=True)
+                            
+                            # Add download button for CSV
+                            csv = df.to_csv(index=False)
+                            st.download_button(
+                                label="Download Results as CSV",
+                                data=csv,
+                                file_name="query_results.csv",
+                                mime="text/csv",
+                            )
+                        else:
+                            st.info("No results found for this query.")
+                        
+                        # Display raw JSON results
+                        with st.expander("View Raw JSON Results"):
+                            st.markdown('<div class="json-viewer">' + 
+                                       json.dumps(result["results"], indent=2) + 
+                                       '</div>', unsafe_allow_html=True)
+                        
+                        # Display AI explanation
+                        st.markdown("### AI Agent Response")
                         st.write(result["answer"])
                     else:
                         st.error(f"An error occurred: {result['error']}")
@@ -61,3 +172,11 @@ try:
 except Exception as e:
     st.error(f"Failed to initialize SQL assistant: {e}")
     st.write("Please ensure the database has been created by running the Preprocess step first.")
+
+# Footer
+st.markdown("---")
+st.markdown("""
+<div style="text-align: center; color: #666;">
+    Text-to-SQL functionality powered by LangChain and SQLite | <a href="https://github.com/kaljuvee/mli-rag-demo" target="_blank">GitHub Repository</a>
+</div>
+""", unsafe_allow_html=True)

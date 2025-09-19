@@ -13,11 +13,11 @@ from fastapi.responses import JSONResponse
 from fastapi.openapi.utils import get_openapi
 from pydantic import BaseModel, Field
 
-from utils import db_util, vector_db_util
+# Import only the essential utilities to avoid dependency issues
+from utils import db_util
 
-# Initialize databases
+# Initialize database
 db = db_util.PropertyDatabase()
-vector_db = vector_db_util.PropertyVectorDB()
 
 # Create FastAPI app
 app = FastAPI(
@@ -48,27 +48,6 @@ class HealthResponse(BaseModel):
 class PropertySearchRequest(BaseModel):
     query: str
     params: Dict[str, Any] = {}
-
-class TextToSqlRequest(BaseModel):
-    question: str
-    include_sql: bool = True
-
-class TextToSqlResponse(BaseModel):
-    success: bool
-    question: str
-    sql: Optional[str] = None
-    results: List[Dict[str, Any]]
-    execution_time: float
-    error: Optional[str] = None
-
-class SimilarPropertiesRequest(BaseModel):
-    property_id: Optional[int] = None
-    query_text: Optional[str] = None
-    top_k: int = 10
-
-class RagQueryRequest(BaseModel):
-    question: str
-    include_context: bool = True
 
 # Health check endpoint
 @app.get("/health", response_model=HealthResponse, tags=["health"])
@@ -162,169 +141,6 @@ async def search_properties(request: PropertySearchRequest):
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST if "syntax error" in str(e).lower() else status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={"success": False, "error": f"Query error: {str(e)}"}
-        )
-
-# Text-to-SQL endpoint
-@app.post("/sql/query", response_model=TextToSqlResponse, tags=["sql"])
-async def text_to_sql_query(request: TextToSqlRequest):
-    """Convert natural language question to SQL and execute it."""
-    try:
-        from utils.mock_sql_chat import MockSQLChat
-        import time
-        
-        start_time = time.time()
-        
-        # Initialize SQL chat
-        sql_chat = MockSQLChat()
-        
-        # Generate SQL from question
-        result = sql_chat.generate_sql_response(request.question)
-        
-        execution_time = time.time() - start_time
-        
-        return {
-            "success": True,
-            "question": request.question,
-            "sql": result.get("sql") if request.include_sql else None,
-            "results": result.get("results", []),
-            "execution_time": execution_time,
-            "error": None
-        }
-    except Exception as e:
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={
-                "success": False,
-                "question": request.question,
-                "sql": None,
-                "results": [],
-                "execution_time": 0,
-                "error": str(e)
-            }
-        )
-
-# Find similar properties endpoint
-@app.post("/rag/similar", tags=["rag"])
-async def find_similar_properties(request: SimilarPropertiesRequest):
-    """Find properties similar to a target property using vector similarity."""
-    try:
-        # Initialize vector database if needed
-        if not vector_db.initialize_vectors():
-            return JSONResponse(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                content={"success": False, "error": "Failed to initialize vector database"}
-            )
-        
-        # Find similar properties
-        result = vector_db.find_similar_properties(
-            target_property_id=request.property_id,
-            query_text=request.query_text,
-            top_k=request.top_k
-        )
-        
-        if not result["success"]:
-            return JSONResponse(
-                status_code=status.HTTP_404_NOT_FOUND if "not found" in result["error"].lower() else status.HTTP_500_INTERNAL_SERVER_ERROR,
-                content={"success": False, "error": result["error"]}
-            )
-        
-        return result
-    except Exception as e:
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"success": False, "error": str(e)}
-        )
-
-# Portfolio homogeneity endpoint
-@app.get("/rag/homogeneity", tags=["rag"])
-async def portfolio_homogeneity():
-    """Calculate portfolio homogeneity using vector embeddings."""
-    try:
-        # Initialize vector database if needed
-        if not vector_db.initialize_vectors():
-            return JSONResponse(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                content={"success": False, "error": "Failed to initialize vector database"}
-            )
-        
-        # Calculate homogeneity
-        result = vector_db.calculate_portfolio_homogeneity()
-        
-        if not result["success"]:
-            return JSONResponse(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                content={"success": False, "error": result["error"]}
-            )
-        
-        return result
-    except Exception as e:
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"success": False, "error": str(e)}
-        )
-
-# RAG query endpoint
-@app.post("/rag/query", tags=["rag"])
-async def rag_query(request: RagQueryRequest):
-    """Query the property database using RAG approach."""
-    try:
-        # This is a placeholder for actual RAG implementation
-        # In a real implementation, this would use a language model with the vector database
-        
-        # Initialize vector database if needed
-        if not vector_db.initialize_vectors():
-            return JSONResponse(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                content={"success": False, "error": "Failed to initialize vector database"}
-            )
-        
-        # For now, return a mock response based on the question
-        if "homogeneity" in request.question.lower():
-            homogeneity = vector_db.calculate_portfolio_homogeneity()
-            
-            answer = f"The portfolio has a homogeneity score of {homogeneity['overall_homogeneity']:.2f}, "
-            if homogeneity['overall_homogeneity'] < 0.3:
-                answer += "indicating a diverse property portfolio with varied characteristics."
-            elif homogeneity['overall_homogeneity'] < 0.6:
-                answer += "suggesting a balanced mix of property characteristics across the estate."
-            else:
-                answer += "showing a highly homogeneous property portfolio with similar characteristics."
-                
-            context = []
-            
-        elif "similar" in request.question.lower() and "marketed" in request.question.lower():
-            # Get a marketed property
-            marketed_props = vector_db.get_marketed_properties()
-            if len(marketed_props) > 0:
-                prop_id = marketed_props.iloc[0]['property_id']
-                similar = vector_db.find_similar_properties(target_property_id=prop_id, top_k=5)
-                
-                answer = f"The most similar properties to the marketed property '{marketed_props.iloc[0]['industrial_estate_name']}' "
-                answer += f"are located in regions like {', '.join(set([p['region'] for p in similar['results'][:3]]))}. "
-                answer += f"These properties have similarity scores ranging from {similar['min_similarity']:.2f} to {similar['max_similarity']:.2f}."
-                
-                context = similar['results'][:3] if request.include_context else []
-            else:
-                answer = "No marketed properties found to compare with."
-                context = []
-        else:
-            answer = "I can analyze the property portfolio for you. You can ask about portfolio homogeneity, "
-            answer += "find similar properties to marketed ones, or explore property characteristics across regions."
-            context = []
-        
-        return {
-            "success": True,
-            "question": request.question,
-            "answer": answer,
-            "context": context if request.include_context else [],
-            "confidence": 0.85,
-            "execution_time": 0.75,
-            "error": None
-        }
-    except Exception as e:
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"success": False, "error": str(e)}
         )
 
 # Custom OpenAPI schema
