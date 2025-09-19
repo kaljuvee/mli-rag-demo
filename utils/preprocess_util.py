@@ -16,9 +16,10 @@ from . import db_util
 class PropertyPreprocessor:
     """Handles preprocessing of property data from Excel files."""
     
-    def __init__(self, db_path: str = "db/mli.db"):
+    def __init__(self, db_path: str = None):
         """Initialize preprocessor with database path."""
-        self.db_path = db_path
+        # Use the path from db_util if none provided
+        self.db_path = db_path if db_path else db_util.DB_FILE
         self.ensure_db_directory()
     
     def ensure_db_directory(self):
@@ -42,6 +43,10 @@ class PropertyPreprocessor:
             Tuple of (current_portfolio_df, marketed_warehouses_df)
         """
         try:
+            # Convert to absolute paths if needed
+            current_portfolio_path = self._ensure_absolute_path(current_portfolio_path)
+            marketed_warehouses_path = self._ensure_absolute_path(marketed_warehouses_path)
+            
             print(f"Loading current portfolio from: {current_portfolio_path}")
             current_df = pd.read_excel(current_portfolio_path)
             print(f"✅ Loaded {len(current_df)} current properties")
@@ -54,6 +59,18 @@ class PropertyPreprocessor:
             
         except Exception as e:
             raise Exception(f"Error loading Excel files: {str(e)}")
+    
+    def _ensure_absolute_path(self, file_path: str) -> str:
+        """Convert relative path to absolute path if needed."""
+        if os.path.isabs(file_path):
+            return file_path
+        
+        # Get the project root directory
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(current_dir)
+        
+        # Join with the relative path
+        return os.path.join(project_root, file_path)
     
     def clean_and_standardize_data(self, 
                                   current_df: pd.DataFrame, 
@@ -359,14 +376,14 @@ class PropertyPreprocessor:
 
 def run_preprocessing(current_portfolio_path: str = "data/CurrentPortfolio.xlsx",
                      marketed_warehouses_path: str = "data/MarketedWarehouses.xlsx",
-                     db_path: str = "db/mli.db") -> Dict[str, Any]:
+                     db_path: str = None) -> Dict[str, Any]:
     """
     Convenience function to run preprocessing.
     
     Args:
         current_portfolio_path: Path to current portfolio Excel file
         marketed_warehouses_path: Path to marketed warehouses Excel file
-        db_path: Path to SQLite database file
+        db_path: Path to SQLite database file (uses db_util.DB_FILE if None)
         
     Returns:
         Dictionary with preprocessing results

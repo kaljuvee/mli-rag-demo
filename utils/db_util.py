@@ -1,13 +1,35 @@
 '''
 Utility for database operations using SQLAlchemy.
 '''
+import os
 import pandas as pd
 from sqlalchemy import create_engine, text
+from pathlib import Path
 
-DB_FILE = "/home/ubuntu/mli-rag-demo/db/mli.db"
+# Use relative path for better compatibility across environments
+def get_db_path():
+    """Get the database path in a deployment-friendly way."""
+    # Get the directory of the current file
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # Go up one level to the project root
+    project_root = os.path.dirname(current_dir)
+    
+    # Create db directory if it doesn't exist
+    db_dir = os.path.join(project_root, "db")
+    os.makedirs(db_dir, exist_ok=True)
+    
+    # Return the full path to the database file
+    return os.path.join(db_dir, "mli.db")
+
+# Get the database path
+DB_FILE = get_db_path()
+
+# Create the engine with the database path
 ENGINE = create_engine(f"sqlite:///{DB_FILE}")
 
 def get_engine():
+    """Get the SQLAlchemy engine."""
     return ENGINE
 
 def create_tables():
@@ -41,4 +63,3 @@ def query_db(query: str) -> pd.DataFrame:
     """Queries the database and returns a DataFrame."""
     with ENGINE.connect() as connection:
         return pd.read_sql(query, connection)
-
