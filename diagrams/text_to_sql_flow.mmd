@@ -1,0 +1,29 @@
+sequenceDiagram
+    participant User
+    participant SQLPage as Text-to-SQL Page
+    participant SQLChat as SQL Chat Utility
+    participant OpenAI as OpenAI API
+    participant DBUtil as Database Utility
+    participant SQLite as SQLite Database
+    
+    User->>SQLPage: Enter Natural Language Query
+    User->>SQLPage: Click "Get Answer"
+    
+    SQLPage->>DBUtil: get_schema()
+    DBUtil->>SQLite: PRAGMA table_info(properties)
+    SQLite-->>DBUtil: schema_info
+    DBUtil-->>SQLPage: formatted_schema
+    
+    SQLPage->>SQLChat: get_sql_from_prompt(query, schema)
+    SQLChat->>OpenAI: generate_completion(system_prompt + query + schema)
+    OpenAI-->>SQLChat: generated_sql
+    SQLChat-->>SQLPage: sql_query
+    
+    SQLPage->>DBUtil: execute_query(sql_query)
+    DBUtil->>SQLite: execute(sql_query)
+    SQLite-->>DBUtil: query_results
+    DBUtil-->>SQLPage: results_dataframe
+    
+    SQLPage-->>User: Display SQL Query
+    SQLPage-->>User: Display Results Table
+    SQLPage-->>User: Display Raw JSON

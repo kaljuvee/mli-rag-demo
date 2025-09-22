@@ -1,0 +1,55 @@
+classDiagram
+    class PropertyVectorDB {
+        -embeddings_dir: str
+        -vectors_path: str
+        -faiss_index_path: str
+        -vectorizer_path: str
+        -property_ids_path: str
+        -property_vectors: ndarray
+        -faiss_index: IndexFlatIP
+        -vectorizer: TfidfVectorizer
+        -property_ids: List[int]
+        +__init__(embeddings_dir=None)
+        +load_vectors()
+        +initialize_vectors(force_rebuild=False)
+        +check_initialized()
+        +create_property_text(property_row)
+        +vectorize_query(query_text)
+        +find_similar_properties(target_property_id, query_text, top_k)
+        +calculate_portfolio_homogeneity()
+        +get_property_by_id(property_id)
+        +get_properties_near_cities(max_distance_miles)
+    }
+    
+    class FAISS {
+        +IndexFlatIP
+        +normalize_L2(vectors)
+        +add(vectors)
+        +search(query_vector, k)
+        +write_index(index, path)
+        +read_index(path)
+    }
+    
+    class TfidfVectorizer {
+        +max_features: int
+        +stop_words: str
+        +fit_transform(texts)
+        +transform(query)
+    }
+    
+    class PropertyDatabase {
+        -db_path: str
+        -conn: Connection
+        -engine: Engine
+        +__init__(db_path=None)
+        +connect()
+        +close()
+        +query_to_df(query, params=None)
+        +execute_query(query, params=None)
+        +get_engine()
+        +get_schema()
+    }
+    
+    PropertyVectorDB --> FAISS : uses
+    PropertyVectorDB --> TfidfVectorizer : uses
+    PropertyVectorDB --> PropertyDatabase : queries

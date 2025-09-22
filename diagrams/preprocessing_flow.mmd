@@ -1,0 +1,23 @@
+flowchart TD
+    Start([Start Preprocessing]) --> LoadExcel[Load Excel Files]
+    LoadExcel --> |CurrentPortfolio.xlsx| CurrentDF[Current Properties DataFrame]
+    LoadExcel --> |MarketedWarehouses.xlsx| MarketedDF[Marketed Properties DataFrame]
+    
+    CurrentDF --> CleanCurrent[Clean Current Properties]
+    MarketedDF --> CleanMarketed[Clean Marketed Properties]
+    
+    CleanCurrent --> |Handle Missing Values| CurrentClean[Cleaned Current Properties]
+    CleanMarketed --> |Handle Missing Values| MarketedClean[Cleaned Marketed Properties]
+    
+    CurrentClean --> Merge[Merge DataFrames]
+    MarketedClean --> Merge
+    
+    Merge --> |Combined DataFrame| CreateDB[Create SQLite Database]
+    CreateDB --> |Create Tables| LoadDB[Load Data to Database]
+    
+    LoadDB --> |Database Populated| InitVectors[Initialize Vector Database]
+    InitVectors --> |Generate Property Texts| Vectorize[Create TF-IDF Vectors]
+    Vectorize --> |Create Embeddings| CreateFAISS[Build FAISS Index]
+    CreateFAISS --> |Save Index| SaveVectors[Save Vector Files]
+    
+    SaveVectors --> |Vectors Saved| Complete([Preprocessing Complete])

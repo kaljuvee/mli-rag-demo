@@ -1,0 +1,50 @@
+flowchart TB
+    subgraph "Frontend"
+        UI[Streamlit UI]
+        UI --> Home[Home.py]
+        Home --> Preprocess[1_Preprocess.py]
+        Home --> TextToSQL[2_Text-to-SQL.py]
+        Home --> RAGAnalysis[3_RAG_Analysis.py]
+        Home --> SimpleQuery[4_Simple_Query.py]
+    end
+    
+    subgraph "Backend API"
+        API[FastAPI]
+        API --> Health[/health]
+        API --> PropAPI[/properties]
+        API --> SQLAPI[/properties/search]
+        API --> RAGAPI[/rag]
+    end
+    
+    subgraph "Core Utilities"
+        Utils[Utils]
+        Utils --> DBUtil[db_util.py]
+        Utils --> VectorDBUtil[vector_db_util.py]
+        Utils --> AIUtil[ai_util.py]
+        Utils --> SQLChat[sql_chat.py]
+        Utils --> PreprocessUtil[preprocess_util.py]
+    end
+    
+    subgraph "Data Storage"
+        Storage[Storage]
+        Storage --> SQLite[(SQLite DB)]
+        Storage --> FAISS[(FAISS Vector DB)]
+        Storage --> Excel[(Excel Files)]
+    end
+    
+    subgraph "External Services"
+        External[External]
+        External --> OpenAI[OpenAI API]
+    end
+    
+    UI --> API
+    TextToSQL --> SQLChat
+    RAGAnalysis --> VectorDBUtil
+    Preprocess --> PreprocessUtil
+    PreprocessUtil --> DBUtil
+    PreprocessUtil --> VectorDBUtil
+    DBUtil --> SQLite
+    VectorDBUtil --> FAISS
+    SQLChat --> AIUtil
+    AIUtil --> OpenAI
+    PreprocessUtil --> Excel

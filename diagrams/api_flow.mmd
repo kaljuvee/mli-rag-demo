@@ -1,0 +1,37 @@
+sequenceDiagram
+    participant Client
+    participant FastAPI as FastAPI Server
+    participant DBUtil as Database Utility
+    participant VectorDB as Vector Database
+    participant SQLite as SQLite Database
+    
+    Client->>FastAPI: GET /health
+    FastAPI-->>Client: {"status": "healthy", "timestamp": "..."}
+    
+    Client->>FastAPI: GET /properties?limit=10&offset=0
+    FastAPI->>DBUtil: query_to_dict("SELECT * FROM properties LIMIT 10")
+    DBUtil->>SQLite: execute query
+    SQLite-->>DBUtil: results
+    DBUtil-->>FastAPI: properties_list
+    FastAPI-->>Client: {"success": true, "properties": [...]}
+    
+    Client->>FastAPI: GET /properties/123
+    FastAPI->>DBUtil: query_to_dict("SELECT * FROM properties WHERE property_id = ?", [123])
+    DBUtil->>SQLite: execute query
+    SQLite-->>DBUtil: property_data
+    DBUtil-->>FastAPI: property_dict
+    FastAPI-->>Client: {"success": true, "property": {...}}
+    
+    Client->>FastAPI: POST /properties/search {"query": "SELECT * FROM properties WHERE region = 'North West'"}
+    FastAPI->>DBUtil: query_to_dict(request.query)
+    DBUtil->>SQLite: execute query
+    SQLite-->>DBUtil: results
+    DBUtil-->>FastAPI: properties_list
+    FastAPI-->>Client: {"success": true, "properties": [...]}
+    
+    Client->>FastAPI: GET /properties/marketed
+    FastAPI->>DBUtil: query_to_dict("SELECT * FROM properties WHERE is_marketed = 1")
+    DBUtil->>SQLite: execute query
+    SQLite-->>DBUtil: marketed_properties
+    DBUtil-->>FastAPI: properties_list
+    FastAPI-->>Client: {"success": true, "properties": [...]}

@@ -1,0 +1,38 @@
+sequenceDiagram
+    participant User
+    participant RAGPage as RAG Analysis Page
+    participant VectorDB as Vector Database
+    participant FAISS as FAISS Index
+    participant SQLite as SQLite Database
+    
+    User->>RAGPage: Select Query Type
+    User->>RAGPage: Select Target Property
+    User->>RAGPage: Click "Run Analysis"
+    
+    alt Find Similar Properties
+        RAGPage->>VectorDB: get_property_vector(property_id)
+        VectorDB->>FAISS: search(property_vector, top_k=10)
+        FAISS-->>VectorDB: similar_indices, similarity_scores
+        VectorDB->>SQLite: get_properties_by_ids(property_ids)
+        SQLite-->>VectorDB: property_details
+        VectorDB-->>RAGPage: similar_properties_with_scores
+        RAGPage-->>User: Display Similar Properties Table
+    
+    else Calculate Portfolio Homogeneity
+        RAGPage->>VectorDB: calculate_portfolio_homogeneity()
+        VectorDB->>FAISS: get_all_vectors()
+        FAISS-->>VectorDB: all_property_vectors
+        VectorDB->>VectorDB: compute_similarity_matrix()
+        VectorDB->>VectorDB: calculate_metrics()
+        VectorDB-->>RAGPage: homogeneity_metrics
+        RAGPage-->>User: Display Homogeneity Analysis
+    
+    else Find Properties Near Cities
+        RAGPage->>VectorDB: get_property_vector(property_id)
+        VectorDB->>SQLite: get_properties_near_cities(max_distance=10)
+        SQLite-->>VectorDB: filtered_properties
+        VectorDB->>FAISS: search_filtered(property_vector, filtered_ids)
+        FAISS-->>VectorDB: similar_indices, similarity_scores
+        VectorDB-->>RAGPage: nearby_similar_properties
+        RAGPage-->>User: Display Nearby Properties Table
+    end
