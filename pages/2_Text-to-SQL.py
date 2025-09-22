@@ -5,7 +5,7 @@ import streamlit as st
 import pandas as pd
 import json
 import time
-from utils.mock_sql_chat import MockSQLChat
+from utils.sql_chat import MLISQLChatAssistant
 from utils.db_util import db
 
 # Page configuration
@@ -88,7 +88,7 @@ if not db.check_initialized():
 # Initialize the SQL chat assistant
 @st.cache_resource
 def get_sql_assistant():
-    return MockSQLChat(db_path=db.db_path)
+    return MLISQLChatAssistant(db_path=db.db_path)
 
 try:
     sql_assistant = get_sql_assistant()
@@ -120,45 +120,16 @@ try:
                     
                     if result["success"]:
                         # Success message
-                        st.markdown('<div class="success-box">Query executed successfully.</div>', unsafe_allow_html=True)
+                        st.markdown('<div class="success-box">Assistant response generated.</div>', unsafe_allow_html=True)
                         
                         # Display metrics
-                        col1, col2, col3 = st.columns(3)
+                        col1, col2 = st.columns(2)
                         with col1:
-                            st.metric("Results Found", len(result["results"]))
-                        with col2:
                             st.metric("Execution Time", f"{execution_time:.2f}s")
-                        with col3:
-                            st.metric("Confidence", f"{result.get('confidence', 0.9):.2f}")
+                        with col2:
+                            st.metric("Model", "gpt-4o-mini")
                         
-                        # Display SQL query
-                        st.markdown("### Generated SQL Query")
-                        st.markdown('<div class="sql-box">' + result["sql"] + '</div>', unsafe_allow_html=True)
-                        
-                        # Display results as DataFrame
-                        st.markdown("### Results Table")
-                        if result["results"]:
-                            df = pd.DataFrame(result["results"])
-                            st.dataframe(df, use_container_width=True)
-                            
-                            # Add download button for CSV
-                            csv = df.to_csv(index=False)
-                            st.download_button(
-                                label="Download Results as CSV",
-                                data=csv,
-                                file_name="query_results.csv",
-                                mime="text/csv",
-                            )
-                        else:
-                            st.info("No results found for this query.")
-                        
-                        # Display raw JSON results
-                        with st.expander("View Raw JSON Results"):
-                            st.markdown('<div class="json-viewer">' + 
-                                       json.dumps(result["results"], indent=2) + 
-                                       '</div>', unsafe_allow_html=True)
-                        
-                        # Display AI explanation
+                        # Display assistant answer
                         st.markdown("### AI Agent Response")
                         st.write(result["answer"])
                     else:

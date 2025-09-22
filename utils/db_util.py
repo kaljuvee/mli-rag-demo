@@ -148,3 +148,57 @@ class PropertyDatabase:
 
 # Create a global instance for convenience
 db = PropertyDatabase()
+
+# --- Convenience SQLAlchemy-based helpers (module-level) ---
+# A shared SQLAlchemy engine that other modules/tests can override (e.g., to in-memory)
+try:
+    ENGINE
+except NameError:
+    ENGINE = create_engine(f"sqlite:///{db.db_path}")
+
+def create_tables():
+    """Create core tables using the shared ENGINE.
+    Matches the schema expected by the rest of the app and tests.
+    """
+    with ENGINE.connect() as connection:
+        connection.execute(text(
+            """
+            CREATE TABLE IF NOT EXISTS properties (
+                property_id INTEGER PRIMARY KEY,
+                industrial_estate_name TEXT,
+                unit_name TEXT,
+                region TEXT,
+                latitude REAL,
+                longitude REAL,
+                car_parking_spaces INTEGER,
+                size_sqm REAL,
+                build_year INTEGER,
+                yard_depth_m REAL,
+                min_eaves_m REAL,
+                max_eaves_m REAL,
+                doors INTEGER,
+                epc_rating TEXT,
+                is_marketed BOOLEAN
+            )
+            """
+        ))
+
+def load_df_to_db(df: pd.DataFrame, table_name: str = "properties", if_exists: str = "replace") -> None:
+    """Load a DataFrame into the database using the shared ENGINE."""
+    df.to_sql(table_name, con=ENGINE, if_exists=if_exists, index=False)
+
+def query_db(query: str, params: dict | None = None) -> pd.DataFrame:
+    """Execute a SQL query and return a pandas DataFrame using the shared ENGINE."""
+    if params:
+        return pd.read_sql_query(query, ENGINE, params=params)
+    return pd.read_sql_query(query, ENGINE)
+
+def check_initialized() -> bool:
+    """Check if the properties table exists and has rows using the shared ENGINE."""
+    try:
+        with ENGINE.connect() as connection:
+            result = connection.execute(text("SELECT COUNT(*) FROM properties"))
+            count = result.scalar()
+            return (count or 0) > 0
+    except Exception:
+        return False
