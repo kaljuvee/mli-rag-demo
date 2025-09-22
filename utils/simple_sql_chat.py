@@ -13,7 +13,10 @@ load_dotenv()
 class SimpleSQLChat:
     def __init__(self, db_path=None):
         if db_path is None:
-            db_path = "/home/ubuntu/mli-rag-demo/db/mli.db"
+            # Compute DB path relative to project root
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            project_root = os.path.dirname(current_dir)
+            db_path = os.path.join(project_root, "db", "mli.db")
         self.db_path = db_path
         
         # Initialize OpenAI client
